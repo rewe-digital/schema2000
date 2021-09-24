@@ -20,6 +20,7 @@ impl SchemaNode {
             NodeType::AnyOf(_) => {}
             NodeType::OneOf(_) => {}
             NodeType::Not(_) => {}
+            NodeType::Enum(_) => {}
             NodeType::Simple(_simple) => {
                 // what could happen here?
                 // `other` perfectly holds the criterias of `simple` -> nothing to do

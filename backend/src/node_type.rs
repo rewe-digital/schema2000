@@ -9,5 +9,6 @@ pub enum NodeType {
     OneOf(Vec<SchemaNode>), // xor
     Not(SchemaNode),        // not
 
+    Enum(Vec<SimpleType>),
     Simple(SimpleType),
 }
