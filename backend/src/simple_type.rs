@@ -1,19 +1,18 @@
-use crate::integer_type::IntegerType;
-use crate::string_type::StringType;
+use maplit::hashset;
 use serde_json::Value;
+use std::collections::HashSet;
 
-// TODO: what about enum?
 #[derive(Debug)]
 pub enum SimpleType {
     Array,
     Boolean,
-    // maybe we should inline IntegerType, so we have SimpleType::Integer and SimpleType::IntegerEnum
-    Integer(IntegerType),
+    Integer,
+    IntegerEnum(HashSet<i64>),
     Null,
     Number,
     Object,
-    // same as for integer
-    String(StringType),
+    String,
+    StringEnum(HashSet<String>),
 }
 
 impl SimpleType {
@@ -22,10 +21,10 @@ impl SimpleType {
             Value::Null => SimpleType::Null,
             Value::Bool(_) => SimpleType::Boolean,
             Value::Number(n) if n.is_i64() => {
-                SimpleType::Integer(IntegerType::new(n.as_i64().unwrap()))
+                SimpleType::IntegerEnum(hashset! {n.as_i64().unwrap()})
             }
             Value::Number(_) => SimpleType::Number,
-            Value::String(s) => SimpleType::String(StringType::new(s)),
+            Value::String(s) => SimpleType::StringEnum(hashset! {s.clone()}),
             Value::Array(_a) => SimpleType::Array, // this would need to recurse down the array and all SimpleType::new(_a)
             Value::Object(_) => SimpleType::Object, // same as for the array: walk along all elements
         }
