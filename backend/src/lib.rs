@@ -1,7 +1,6 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use schema_builder::SchemaBuilder;
+
+mod node_type;
+mod schema_builder;
+mod schema_node;
+mod simple_type;
