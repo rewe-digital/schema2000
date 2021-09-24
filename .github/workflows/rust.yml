@@ -1,0 +1,72 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: get rust version
+        id: rustc_version
+        run: echo ::set-output name=version::$(rustc --version)
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ steps.rustc_version.version }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-cargo-
+
+      - name: check formatting
+        run: cargo fmt --all -- --check
+
+      - name: compiler check
+        run: cargo check --tests --examples
+
+      - name: tests
+        run: cargo test --verbose
+
+      - name: linter
+        run: cargo clippy -- -D warnings
+
+  pedantic:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: install nightly
+        run: rustup install nightly && rustup component add clippy --toolchain=nightly
+
+      - name: get rust nightly version
+        id: rust_nightly
+        run: echo ::set-output name=version::$(rustup run nightly rustc --version)
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ steps.rust_nightly.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-
+            ${{ runner.os }}-cargo-
+
+      - name: run the pedantic linter (warnings only)
+        run: cargo +nightly clippy --color=always --all-targets -- -W clippy::pedantic
