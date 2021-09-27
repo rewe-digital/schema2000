@@ -49,9 +49,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: install nightly
-        run: rustup install nightly && rustup component add clippy --toolchain=nightly
+      
+      - name: install clippy nightly
+        run: rustup toolchain install nightly --component clippy
 
       - name: get rust nightly version
         id: rust_nightly
