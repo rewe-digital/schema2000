@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut current_hypothesis: Option<SchemaHypothesis> = None;
 
     for json_document in iterator {
-        let new_hypo = generate_hypothesis(&json_document.unwrap());
+        let new_hypo = generate_hypothesis(&json_document?);
         if current_hypothesis.is_none() {
             current_hypothesis = Some(new_hypo);
         } else {
