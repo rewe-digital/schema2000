@@ -1,6 +1,12 @@
-pub use schema_builder::SchemaBuilder;
+use serde_json::Value;
 
-mod node_type;
-mod schema_builder;
-mod schema_node;
-mod simple_type;
+#[derive(Debug)]
+pub struct SchemaHypothesis {}
+
+pub fn generate_hypothesis(_dom: &Value) -> SchemaHypothesis {
+    SchemaHypothesis {}
+}
+
+pub fn merge_hypothesis(_a: SchemaHypothesis, _b: SchemaHypothesis) -> SchemaHypothesis {
+    SchemaHypothesis {}
+}

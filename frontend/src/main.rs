@@ -1,4 +1,4 @@
-use backend::SchemaBuilder;
+use backend::{generate_hypothesis, merge_hypothesis, SchemaHypothesis};
 use renderer::render_debug;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -8,13 +8,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let deserializer = serde_json::Deserializer::from_reader(stdin);
     let iterator = deserializer.into_iter::<serde_json::Value>();
 
-    let mut sb = SchemaBuilder::new();
+    //let mut sb = SchemaBuilder::new();
 
-    for item in iterator {
-        sb.inspect(&item?);
+    let mut current_hypothesis: Option<SchemaHypothesis> = None;
+
+    for json_document in iterator {
+        let new_hypo = generate_hypothesis(&json_document.unwrap());
+        if current_hypothesis.is_none() {
+            current_hypothesis = Some(new_hypo);
+        } else {
+            current_hypothesis = current_hypothesis.map(|cur| merge_hypothesis(cur, new_hypo))
+        }
     }
 
-    let result = render_debug(&sb);
+    let result = render_debug(&current_hypothesis.unwrap());
 
     println!("{}", result);
 
