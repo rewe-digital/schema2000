@@ -35,14 +35,13 @@ fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
                 properties: merged_properties,
             }
         }
-        (NodeType::Any(mut xs), NodeType::Any(ys)) => {
+        (NodeType::Any(xs), NodeType::Any(ys)) => {
             let merged_types = ys.into_iter().fold(xs, |mut acc, y| {
-                if acc.contains(&y) {
-                    acc
-                } else {
+                if !acc.contains(&y) {
                     acc.push(y);
-                    acc
                 }
+
+                acc
             });
             Any(merged_types)
         }
