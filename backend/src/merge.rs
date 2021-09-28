@@ -4,6 +4,7 @@ use crate::NodeType::Any;
 use crate::SchemaHypothesis;
 use crate::{NodeType, ObjectProperty};
 
+#[must_use]
 pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypothesis {
     let root = merge_node_type(a.root, b.root);
     SchemaHypothesis { root }
@@ -26,7 +27,7 @@ fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
                 .union(&keys_b)
                 .map(|key| {
                     (
-                        key.to_string(),
+                        (*key).to_string(),
                         merge_object_property(properties_a.get(*key), properties_b.get(*key)),
                     )
                 })
@@ -94,7 +95,7 @@ mod test {
             SchemaHypothesis {
                 root: NodeType::String
             }
-        )
+        );
     }
 
     #[test]
@@ -171,7 +172,7 @@ mod test {
         assert_eq!(
             actual,
             NodeType::Any(vec![NodeType::String, NodeType::Integer])
-        )
+        );
     }
 
     #[test]
@@ -184,7 +185,7 @@ mod test {
         assert_eq!(
             actual,
             NodeType::Any(vec![NodeType::Integer, NodeType::String])
-        )
+        );
     }
 
     #[test]
@@ -197,7 +198,7 @@ mod test {
         assert_eq!(
             actual,
             NodeType::Any(vec![NodeType::Integer, NodeType::String])
-        )
+        );
     }
 
     #[test]
@@ -210,6 +211,6 @@ mod test {
         assert_eq!(
             actual,
             NodeType::Any(vec![NodeType::String, NodeType::Integer])
-        )
+        );
     }
 }

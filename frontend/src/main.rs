@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if current_hypothesis.is_none() {
             current_hypothesis = Some(new_hypo);
         } else {
-            current_hypothesis = current_hypothesis.map(|cur| merge_hypothesis(cur, new_hypo))
+            current_hypothesis = current_hypothesis.map(|cur| merge_hypothesis(cur, new_hypo));
         }
     }
 

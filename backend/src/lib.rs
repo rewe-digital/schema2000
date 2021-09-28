@@ -35,7 +35,7 @@ fn generate_properties(properties: &Map<String, Value>) -> HashMap<String, Objec
         .iter()
         .map(|(key, value)| {
             (
-                key.to_owned(),
+                key.clone(),
                 ObjectProperty {
                     required: true,
                     node_type: generate_node_type(value),
@@ -60,6 +60,7 @@ fn generate_node_type(dom: &Value) -> NodeType {
     }
 }
 
+#[must_use]
 pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
     SchemaHypothesis {
         root: generate_node_type(dom),
