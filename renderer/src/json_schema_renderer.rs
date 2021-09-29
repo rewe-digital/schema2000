@@ -42,7 +42,7 @@ fn generate_object_map(properties: &HashMap<String, ObjectProperty>) -> Map<Stri
 
     let mut map = Map::new();
 
-    map.insert("type".to_string(), Value::String(String::from("object")));
+    map.insert("type".to_string(), Value::String("object".to_string()));
     map.insert("required".to_string(), Value::Array(required_props));
     map.insert("properties".to_string(), Value::Object(object_properties));
 
