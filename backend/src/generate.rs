@@ -96,6 +96,23 @@ mod test {
     }
 
     #[test]
+    fn test_array_merge_objects() {
+        let dom = json!([{"a": 1}, {"b": "1"}]);
+        let actual = generate_node_type(&dom);
+        let expected = NodeType::Array(btreeset! {
+            NodeType::Object {
+                properties: btreemap! {
+                    "a".to_string() => ObjectProperty { required: true, node_type: NodeType::Any(
+                        btreeset! { NodeType::String, NodeType::Integer }
+                    )}
+                }
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
     fn test_array_all_int() {
         let dom = json!([10, 15, 25]);
         assert_eq!(
