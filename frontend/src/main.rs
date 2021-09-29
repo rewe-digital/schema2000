@@ -1,5 +1,5 @@
 use backend::SchemaHypothesis;
-use renderer::render_debug;
+use renderer::{render_debug, render_schema};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin = std::io::stdin();
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let result = render_debug(&current_hypothesis.unwrap());
+    let result = render_schema(&current_hypothesis.unwrap());
 
     println!("{}", result);
 

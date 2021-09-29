@@ -25,8 +25,18 @@ fn render_node(node_type: &NodeType) -> Value {
         NodeType::Null => json!({"type": "null"}),
         NodeType::Array(node_types) => Value::Object(generate_array_map(node_types)),
         NodeType::Object { properties } => Value::Object(generate_object_map(properties)),
-        NodeType::Any(_) => unimplemented!(),
+        NodeType::Any(node_types) => Value::Object(generate_any_map(node_types)),
     }
+}
+
+fn generate_any_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
+    let mut map = Map::new();
+    map.insert(
+        "anyOf".to_string(),
+        node_types.iter().map(render_node).collect(),
+    );
+
+    map
 }
 
 fn generate_array_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
@@ -40,8 +50,7 @@ fn generate_array_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
             map
         }
         SetVariances::Multiple(types) => {
-            let items = Value::Array(types.iter().map(render_node).collect());
-            map.insert("items".to_string(), items);
+            map.insert("items".to_string(), Value::Object(generate_any_map(types)));
             map
         }
     }
@@ -80,7 +89,7 @@ mod test {
 
     use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 
-    use crate::json_schema_renderer::render_json_schema;
+    use crate::json_schema_renderer::{render_json_schema, render_node};
 
     #[test]
     fn test_object() {
@@ -123,14 +132,16 @@ mod test {
             json!(
                 {
                     "type": "array",
-                    "items": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "integer"
-                        }
-                    ]
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ]
+                    }
                 }
             )
         );
@@ -166,5 +177,83 @@ mod test {
         let actual = render_json_schema(&hypothesis);
 
         assert_eq!(actual, json!({ "type": "array" }));
+    }
+
+    #[test]
+    fn test_any() {
+        let node_type = NodeType::Any(btreeset![NodeType::String, NodeType::Boolean]);
+
+        let actual = render_node(&node_type);
+
+        assert_eq!(
+            actual,
+            json!({
+                "anyOf": [
+                    {"type": "string"},
+                    {"type": "boolean"},
+                ]
+            })
+        );
+    }
+
+    #[test]
+    fn test_any_one() {
+        let node_type = NodeType::Any(btreeset![NodeType::String]);
+
+        let actual = render_node(&node_type);
+
+        assert_eq!(
+            actual,
+            json!({
+                "anyOf": [
+                    {"type": "string"}
+                ]
+            })
+        );
+    }
+
+    #[test]
+    fn test_any_empty() {
+        let node_type = NodeType::Any(btreeset![]);
+
+        let actual = render_node(&node_type);
+
+        assert_eq!(
+            actual,
+            json!({
+                "anyOf": []
+            })
+        );
+    }
+
+    #[test]
+    fn test_any_complex_types() {
+        let node_type = NodeType::Any(btreeset![NodeType::Object {
+            properties: btreemap! {
+                "id".to_string() => ObjectProperty {
+                    node_type: NodeType::Integer,
+                    required: true
+                }
+            }
+        }]);
+
+        let actual = render_node(&node_type);
+
+        assert_eq!(
+            actual,
+            json!({
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": ["id"]
+                    }
+                ]
+            })
+        );
     }
 }
