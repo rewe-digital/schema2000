@@ -1,11 +1,12 @@
 use std::collections::HashSet;
 
-use crate::NodeType::Any;
+use crate::utils::vector_union;
 use crate::SchemaHypothesis;
 use crate::{NodeType, ObjectProperty};
 
 #[must_use]
 pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypothesis {
+    #![allow(clippy::module_name_repetitions)]
     let root = merge_node_type(a.root, b.root);
     SchemaHypothesis { root }
 }
@@ -36,16 +37,8 @@ fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
                 properties: merged_properties,
             }
         }
-        (NodeType::Any(xs), NodeType::Any(ys)) => {
-            let merged_types = ys.into_iter().fold(xs, |mut acc, y| {
-                if !acc.contains(&y) {
-                    acc.push(y);
-                }
-
-                acc
-            });
-            Any(merged_types)
-        }
+        (NodeType::Array(xs), NodeType::Array(ys)) => NodeType::Array(vector_union(xs, ys)),
+        (NodeType::Any(xs), NodeType::Any(ys)) => NodeType::Any(vector_union(xs, ys)),
         (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
             merge_node_type(a, NodeType::Any(vec![b]))
         }
@@ -95,6 +88,47 @@ mod test {
             SchemaHypothesis {
                 root: NodeType::String
             }
+        );
+    }
+
+    #[test]
+    fn test_merge_array_without_types() {
+        let a = NodeType::Array(vec![]);
+        let b = NodeType::Array(vec![]);
+
+        assert_eq!(merge_node_type(a, b), NodeType::Array(vec![]));
+    }
+
+    #[test]
+    fn test_merge_array_with_same_types() {
+        let a = NodeType::Array(vec![NodeType::Integer]);
+        let b = NodeType::Array(vec![NodeType::Integer]);
+
+        assert_eq!(
+            merge_node_type(a, b),
+            NodeType::Array(vec![NodeType::Integer])
+        );
+    }
+
+    #[test]
+    fn test_merge_array_with_one_empty_one_given() {
+        let a = NodeType::Array(vec![]);
+        let b = NodeType::Array(vec![NodeType::Integer]);
+
+        assert_eq!(
+            merge_node_type(a, b),
+            NodeType::Array(vec![NodeType::Integer])
+        );
+    }
+
+    #[test]
+    fn test_merge_array_with_different_types() {
+        let a = NodeType::Array(vec![NodeType::Integer, NodeType::String]);
+        let b = NodeType::Array(vec![NodeType::Integer, NodeType::Boolean]);
+
+        assert_eq!(
+            merge_node_type(a, b),
+            NodeType::Array(vec![NodeType::Integer, NodeType::String, NodeType::Boolean])
         );
     }
 

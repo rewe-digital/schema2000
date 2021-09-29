@@ -1,4 +1,4 @@
-use backend::{generate_hypothesis, merge_hypothesis, SchemaHypothesis};
+use backend::SchemaHypothesis;
 use renderer::render_debug;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -13,11 +13,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut current_hypothesis: Option<SchemaHypothesis> = None;
 
     for json_document in iterator {
-        let new_hypo = generate_hypothesis(&json_document?);
+        let new_hypo = backend::generate_hypothesis(&json_document?);
         if current_hypothesis.is_none() {
             current_hypothesis = Some(new_hypo);
         } else {
-            current_hypothesis = current_hypothesis.map(|cur| merge_hypothesis(cur, new_hypo));
+            current_hypothesis =
+                current_hypothesis.map(|cur| backend::merge_hypothesis(cur, new_hypo));
         }
     }
 
