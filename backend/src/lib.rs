@@ -6,13 +6,13 @@ mod merge;
 
 #[derive(Debug, PartialEq)]
 pub struct SchemaHypothesis {
-    root: NodeType,
+    pub root: NodeType,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ObjectProperty {
-    node_type: NodeType,
-    required: bool,
+    pub node_type: NodeType,
+    pub required: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]

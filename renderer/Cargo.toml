@@ -7,3 +7,5 @@ edition = "2018"
 
 [dependencies]
 backend = { path = "../backend" }
+serde_json = "1.0.68"
+maplit = "1.0.2"

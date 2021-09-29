@@ -1,10 +1,12 @@
+mod json_schema_renderer;
+
 use backend::SchemaHypothesis;
 
 pub fn render_debug(schema: &SchemaHypothesis) -> String {
     format!("{:#?}", schema)
 }
 
-pub fn render_schema(_schema: &SchemaHypothesis) -> String {
+pub fn render_schema(schema: &SchemaHypothesis) -> String {
     todo!()
 }
 
