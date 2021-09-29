@@ -1,7 +1,5 @@
-use crate::NodeType;
-
 /// helper to build union of two vectors (when modelling sets with vector)
-pub fn vector_union(xs: Vec<NodeType>, ys: Vec<NodeType>) -> Vec<NodeType> {
+pub fn vector_union<T: PartialEq<T>>(xs: Vec<T>, ys: Vec<T>) -> Vec<T> {
     ys.into_iter().fold(xs, |mut acc, y| {
         if !acc.contains(&y) {
             acc.push(y);
