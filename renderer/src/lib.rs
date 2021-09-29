@@ -1,4 +1,5 @@
 mod json_schema_renderer;
+mod utils;
 
 use backend::SchemaHypothesis;
 

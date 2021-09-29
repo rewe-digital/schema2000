@@ -4,6 +4,7 @@ use serde_json::json;
 use serde_json::value::Value;
 use serde_json::Map;
 
+use crate::utils::SetVariances;
 use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 
 #[must_use]
@@ -32,17 +33,18 @@ fn generate_array_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
     let mut map = Map::new();
     map.insert("type".to_string(), Value::String("array".to_string()));
 
-    if !node_types.is_empty() {
-        let items = if node_types.len() == 1 {
-            let item = node_types.iter().next().unwrap();
-            render_node(item)
-        } else {
-            Value::Array(node_types.iter().map(render_node).collect())
-        };
-        map.insert("items".to_string(), items);
+    match SetVariances::new(node_types) {
+        SetVariances::Empty => map,
+        SetVariances::OneElement(item) => {
+            map.insert("items".to_string(), render_node(item));
+            map
+        }
+        SetVariances::Multiple(types) => {
+            let items = Value::Array(types.iter().map(render_node).collect());
+            map.insert("items".to_string(), items);
+            map
+        }
     }
-
-    map
 }
 
 fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<String, Value> {
