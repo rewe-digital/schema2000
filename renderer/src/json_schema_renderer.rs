@@ -6,7 +6,11 @@ use serde_json::Map;
 
 use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 
-pub fn render_json_schema(schema: &SchemaHypothesis) -> Value {
+pub fn render_schema(schema: &SchemaHypothesis) -> String {
+    serde_json::to_string_pretty(&render_json_schema(schema)).unwrap()
+}
+
+fn render_json_schema(schema: &SchemaHypothesis) -> Value {
     render_node(&schema.root)
 }
 
@@ -17,10 +21,27 @@ fn render_node(node_type: &NodeType) -> Value {
         NodeType::Number => json!({"type": "number"}),
         NodeType::Boolean => json!({"type": "boolean"}),
         NodeType::Null => json!({"type": "null"}),
-        NodeType::Array(_) => unimplemented!(),
+        NodeType::Array(node_types) => Value::Object(generate_array_map(node_types)),
         NodeType::Object { properties } => Value::Object(generate_object_map(properties)),
         NodeType::Any(_) => unimplemented!(),
     }
+}
+
+fn generate_array_map(node_types: &[NodeType]) -> Map<String, Value> {
+    let mut map = Map::new();
+    map.insert("type".to_string(), Value::String("array".to_string()));
+
+    // TODO Use Slice patterns https://doc.rust-lang.org/reference/patterns.html#slice-patterns
+    if !node_types.is_empty() {
+        let items = if node_types.len() == 1 {
+            render_node(node_types.first().unwrap())
+        } else {
+            Value::Array(node_types.iter().map(render_node).collect())
+        };
+        map.insert("items".to_string(), items);
+    }
+
+    map
 }
 
 fn generate_object_map(properties: &HashMap<String, ObjectProperty>) -> Map<String, Value> {
@@ -84,5 +105,63 @@ mod test {
                 }
             )
         )
+    }
+
+    #[test]
+    fn test_array() {
+        let hypothesis = SchemaHypothesis {
+            root: NodeType::Array(vec![NodeType::String, NodeType::Integer]),
+        };
+
+        let actual = render_json_schema(&hypothesis);
+
+        assert_eq!(
+            actual,
+            json!(
+                {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ]
+                }
+            )
+        )
+    }
+
+    #[test]
+    fn test_array_single_type() {
+        let hypothesis = SchemaHypothesis {
+            root: NodeType::Array(vec![NodeType::String]),
+        };
+
+        let actual = render_json_schema(&hypothesis);
+
+        assert_eq!(
+            actual,
+            json!(
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            )
+        )
+    }
+
+    #[test]
+    fn test_empty_array() {
+        let hypothesis = SchemaHypothesis {
+            root: NodeType::Array(vec![]),
+        };
+
+        let actual = render_json_schema(&hypothesis);
+
+        assert_eq!(actual, json!({ "type": "array" }))
     }
 }
