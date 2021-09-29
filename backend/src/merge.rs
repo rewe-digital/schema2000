@@ -1,6 +1,6 @@
+use maplit::btreeset;
 use std::collections::HashSet;
 
-use crate::utils::vector_union;
 use crate::SchemaHypothesis;
 use crate::{NodeType, ObjectProperty};
 
@@ -37,12 +37,14 @@ fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
                 properties: merged_properties,
             }
         }
-        (NodeType::Array(xs), NodeType::Array(ys)) => NodeType::Array(vector_union(xs, ys)),
-        (NodeType::Any(xs), NodeType::Any(ys)) => NodeType::Any(vector_union(xs, ys)),
-        (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
-            merge_node_type(a, NodeType::Any(vec![b]))
+        (NodeType::Array(xs), NodeType::Array(ys)) => {
+            NodeType::Array(xs.union(&ys).cloned().collect())
         }
-        (a, b) => merge_node_type(NodeType::Any(vec![a]), NodeType::Any(vec![b])),
+        (NodeType::Any(xs), NodeType::Any(ys)) => NodeType::Any(xs.union(&ys).cloned().collect()),
+        (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
+            merge_node_type(a, NodeType::Any(btreeset![b]))
+        }
+        (a, b) => merge_node_type(NodeType::Any(btreeset![a]), NodeType::Any(btreeset![b])),
     }
 }
 
@@ -66,7 +68,8 @@ fn merge_object_property(a: Option<&ObjectProperty>, b: Option<&ObjectProperty>)
 
 #[cfg(test)]
 mod test {
-    use maplit::hashmap;
+    use maplit::{btreemap, btreeset};
+    use std::collections::BTreeSet;
 
     use crate::merge::{merge_hypothesis, merge_node_type};
     use crate::ObjectProperty;
@@ -93,42 +96,46 @@ mod test {
 
     #[test]
     fn test_merge_array_without_types() {
-        let a = NodeType::Array(vec![]);
-        let b = NodeType::Array(vec![]);
+        let a = NodeType::Array(BTreeSet::new());
+        let b = NodeType::Array(BTreeSet::new());
 
-        assert_eq!(merge_node_type(a, b), NodeType::Array(vec![]));
+        assert_eq!(merge_node_type(a, b), NodeType::Array(BTreeSet::new()));
     }
 
     #[test]
     fn test_merge_array_with_same_types() {
-        let a = NodeType::Array(vec![NodeType::Integer]);
-        let b = NodeType::Array(vec![NodeType::Integer]);
+        let a = NodeType::Array(btreeset![NodeType::Integer]);
+        let b = NodeType::Array(btreeset![NodeType::Integer]);
 
         assert_eq!(
             merge_node_type(a, b),
-            NodeType::Array(vec![NodeType::Integer])
+            NodeType::Array(btreeset![NodeType::Integer])
         );
     }
 
     #[test]
     fn test_merge_array_with_one_empty_one_given() {
-        let a = NodeType::Array(vec![]);
-        let b = NodeType::Array(vec![NodeType::Integer]);
+        let a = NodeType::Array(btreeset![]);
+        let b = NodeType::Array(btreeset![NodeType::Integer]);
 
         assert_eq!(
             merge_node_type(a, b),
-            NodeType::Array(vec![NodeType::Integer])
+            NodeType::Array(btreeset![NodeType::Integer])
         );
     }
 
     #[test]
     fn test_merge_array_with_different_types() {
-        let a = NodeType::Array(vec![NodeType::Integer, NodeType::String]);
-        let b = NodeType::Array(vec![NodeType::Integer, NodeType::Boolean]);
+        let a = NodeType::Array(btreeset![NodeType::Integer, NodeType::String]);
+        let b = NodeType::Array(btreeset![NodeType::Integer, NodeType::Boolean]);
 
         assert_eq!(
             merge_node_type(a, b),
-            NodeType::Array(vec![NodeType::Integer, NodeType::String, NodeType::Boolean])
+            NodeType::Array(btreeset![
+                NodeType::Integer,
+                NodeType::String,
+                NodeType::Boolean
+            ])
         );
     }
 
@@ -136,7 +143,7 @@ mod test {
     fn test_merge_object_additional_property_b() {
         let a = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     String::from("id") => ObjectProperty { required: true, node_type: NodeType::String }
                 },
             },
@@ -144,7 +151,7 @@ mod test {
 
         let b = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     String::from("id") => ObjectProperty { required: true, node_type: NodeType::String },
                     String::from("name") => ObjectProperty { required: true, node_type: NodeType::String }
                 },
@@ -154,7 +161,7 @@ mod test {
         let actual = merge_hypothesis(a, b);
         let expected = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     String::from("id") => ObjectProperty { required: true, node_type: NodeType::String },
                     String::from("name") => ObjectProperty { required: false, node_type: NodeType::String }
                 },
@@ -168,7 +175,7 @@ mod test {
     fn test_merge_object_property_missing_in_b() {
         let a = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     String::from("id") => ObjectProperty { required: true, node_type: NodeType::String },
                     String::from("name") => ObjectProperty { required: true, node_type: NodeType::String }
                 },
@@ -177,7 +184,7 @@ mod test {
 
         let b = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     String::from("id") => ObjectProperty { required: true, node_type: NodeType::String },
                 },
             },
@@ -186,7 +193,7 @@ mod test {
         let actual = merge_hypothesis(a, b);
         let expected = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     String::from("id") => ObjectProperty { required: true, node_type: NodeType::String },
                     String::from("name") => ObjectProperty { required: false, node_type: NodeType::String }
                 },
@@ -205,46 +212,46 @@ mod test {
 
         assert_eq!(
             actual,
-            NodeType::Any(vec![NodeType::String, NodeType::Integer])
+            NodeType::Any(btreeset![NodeType::String, NodeType::Integer])
         );
     }
 
     #[test]
     fn test_merge_any_and_type() {
-        let a = NodeType::Any(vec![NodeType::Integer]);
+        let a = NodeType::Any(btreeset![NodeType::Integer]);
         let b = NodeType::String;
 
         let actual = merge_node_type(a, b);
 
         assert_eq!(
             actual,
-            NodeType::Any(vec![NodeType::Integer, NodeType::String])
+            NodeType::Any(btreeset![NodeType::Integer, NodeType::String])
         );
     }
 
     #[test]
     fn test_merge_type_and_any() {
         let a = NodeType::String;
-        let b = NodeType::Any(vec![NodeType::Integer]);
+        let b = NodeType::Any(btreeset![NodeType::Integer]);
 
         let actual = merge_node_type(a, b);
 
         assert_eq!(
             actual,
-            NodeType::Any(vec![NodeType::Integer, NodeType::String])
+            NodeType::Any(btreeset![NodeType::Integer, NodeType::String])
         );
     }
 
     #[test]
     fn test_merge_existing_type_and_any() {
-        let a = NodeType::Any(vec![NodeType::String, NodeType::Integer]);
+        let a = NodeType::Any(btreeset![NodeType::String, NodeType::Integer]);
         let b = NodeType::String;
 
         let actual = merge_node_type(a, b);
 
         assert_eq!(
             actual,
-            NodeType::Any(vec![NodeType::String, NodeType::Integer])
+            NodeType::Any(btreeset![NodeType::String, NodeType::Integer])
         );
     }
 }

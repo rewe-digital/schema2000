@@ -5,4 +5,3 @@ pub use model::*;
 mod generate;
 mod merge;
 mod model;
-mod utils;

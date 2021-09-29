@@ -1,28 +1,26 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, PartialEq)]
 pub struct SchemaHypothesis {
     pub root: NodeType,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ObjectProperty {
     pub node_type: NodeType,
     pub required: bool,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NodeType {
     String,
     Integer,
     Number,
     Boolean,
     Null,
-    // TODO Use a HashSet. Problem: Neither HashSet nor HashMap implement the Hash trait
-    Array(Vec<NodeType>),
+    Array(BTreeSet<NodeType>),
     Object {
-        properties: HashMap<String, ObjectProperty>,
+        properties: BTreeMap<String, ObjectProperty>,
     },
-    // TODO Use a HashSet. Problem: Neither HashSet nor HashMap implement the Hash trait
-    Any(Vec<NodeType>),
+    Any(BTreeSet<NodeType>),
 }

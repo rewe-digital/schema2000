@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::json;
 use serde_json::value::Value;
@@ -27,14 +27,14 @@ fn render_node(node_type: &NodeType) -> Value {
     }
 }
 
-fn generate_array_map(node_types: &[NodeType]) -> Map<String, Value> {
+fn generate_array_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
     let mut map = Map::new();
     map.insert("type".to_string(), Value::String("array".to_string()));
 
-    // TODO Use Slice patterns https://doc.rust-lang.org/reference/patterns.html#slice-patterns
     if !node_types.is_empty() {
         let items = if node_types.len() == 1 {
-            render_node(node_types.first().unwrap())
+            let item = node_types.iter().next().unwrap();
+            render_node(item)
         } else {
             Value::Array(node_types.iter().map(render_node).collect())
         };
@@ -44,7 +44,7 @@ fn generate_array_map(node_types: &[NodeType]) -> Map<String, Value> {
     map
 }
 
-fn generate_object_map(properties: &HashMap<String, ObjectProperty>) -> Map<String, Value> {
+fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<String, Value> {
     let required_props: Vec<Value> = properties
         .iter()
         .flat_map(|(key, value)| {
@@ -72,7 +72,7 @@ fn generate_object_map(properties: &HashMap<String, ObjectProperty>) -> Map<Stri
 
 #[cfg(test)]
 mod test {
-    use maplit::hashmap;
+    use maplit::{btreemap, btreeset};
     use serde_json::json;
 
     use backend::{NodeType, ObjectProperty, SchemaHypothesis};
@@ -83,7 +83,7 @@ mod test {
     fn test_object() {
         let hypothesis = SchemaHypothesis {
             root: NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     "name".to_string() => ObjectProperty{ required: true, node_type: NodeType::String },
                 },
             },
@@ -110,7 +110,7 @@ mod test {
     #[test]
     fn test_array() {
         let hypothesis = SchemaHypothesis {
-            root: NodeType::Array(vec![NodeType::String, NodeType::Integer]),
+            root: NodeType::Array(btreeset![NodeType::String, NodeType::Integer]),
         };
 
         let actual = render_json_schema(&hypothesis);
@@ -136,7 +136,7 @@ mod test {
     #[test]
     fn test_array_single_type() {
         let hypothesis = SchemaHypothesis {
-            root: NodeType::Array(vec![NodeType::String]),
+            root: NodeType::Array(btreeset![NodeType::String]),
         };
 
         let actual = render_json_schema(&hypothesis);
@@ -157,7 +157,7 @@ mod test {
     #[test]
     fn test_empty_array() {
         let hypothesis = SchemaHypothesis {
-            root: NodeType::Array(vec![]),
+            root: NodeType::Array(btreeset![]),
         };
 
         let actual = render_json_schema(&hypothesis);

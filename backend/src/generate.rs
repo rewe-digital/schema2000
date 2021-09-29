@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value};
 
 use crate::{NodeType, ObjectProperty, SchemaHypothesis};
 
-fn generate_properties(properties: &Map<String, Value>) -> HashMap<String, ObjectProperty> {
+fn generate_properties(properties: &Map<String, Value>) -> BTreeMap<String, ObjectProperty> {
     properties
         .iter()
         .map(|(key, value)| {
@@ -35,13 +35,13 @@ fn generate_node_type(dom: &Value) -> NodeType {
     }
 }
 
-fn generate_node_type_for_array_values(array_values: &[Value]) -> Vec<NodeType> {
-    let mut types = Vec::new();
+fn generate_node_type_for_array_values(array_values: &[Value]) -> BTreeSet<NodeType> {
+    let mut types = BTreeSet::new();
 
     for value in array_values.iter() {
         let value_type = generate_node_type(value);
         if !types.contains(&value_type) {
-            types.push(value_type);
+            types.insert(value_type);
         }
     }
 
@@ -58,8 +58,9 @@ pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
 
 #[cfg(test)]
 mod test {
-    use maplit::hashmap;
+    use maplit::{btreemap, btreeset};
     use serde_json::json;
+    use std::collections::BTreeSet;
 
     use crate::generate::generate_node_type;
     use crate::{NodeType, ObjectProperty};
@@ -99,14 +100,14 @@ mod test {
         let dom = json!([10, 15, 25]);
         assert_eq!(
             generate_node_type(&dom),
-            NodeType::Array(vec![NodeType::Integer])
+            NodeType::Array(btreeset![NodeType::Integer])
         );
     }
 
     #[test]
     fn test_array_empty() {
         let dom = json!([]);
-        assert_eq!(generate_node_type(&dom), NodeType::Array(Vec::new()));
+        assert_eq!(generate_node_type(&dom), NodeType::Array(BTreeSet::new()));
     }
 
     #[test]
@@ -114,7 +115,7 @@ mod test {
         let dom = json!([42, "Hello"]);
         assert_eq!(
             generate_node_type(&dom),
-            NodeType::Array(vec![NodeType::Integer, NodeType::String])
+            NodeType::Array(btreeset![NodeType::Integer, NodeType::String])
         );
     }
 
@@ -127,7 +128,7 @@ mod test {
         assert_eq!(
             generate_node_type(&dom),
             NodeType::Object {
-                properties: hashmap! {
+                properties: btreemap! {
                     "name".to_string() => ObjectProperty{ required: true, node_type: NodeType::String },
                     "length".to_string() => ObjectProperty{ required: true, node_type: NodeType::Integer }
                 }
