@@ -11,7 +11,8 @@ pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypot
     SchemaHypothesis { root }
 }
 
-fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
+pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
+    #![allow(clippy::module_name_repetitions)]
     match (a, b) {
         (a, b) if a == b => a,
         (

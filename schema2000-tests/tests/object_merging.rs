@@ -1,5 +1,6 @@
-use renderer::render_schema;
 use serde_json::{json, Value};
+
+use renderer::render_schema;
 
 #[test]
 fn test_distinct_object() {
@@ -30,37 +31,40 @@ fn test_distinct_object() {
     let schema_json: Value = serde_json::from_str(&*result).unwrap();
 
     let expected = json!({
-      "properties": {
-        "inputHint": {
-          "type": "string"
-        },
-        "label": {
-          "properties": {
-            "de": {
-              "type": "string"
-            },
-            "en": {
-              "type": "string"
-            }
+      "type": "array",
+      "items": {
+        "properties": {
+          "inputHint": {
+            "type": "string"
           },
-          "required": [
-            "de",
-            "en"
-          ],
-          "type": "object"
+          "label": {
+            "properties": {
+              "de": {
+                "type": "string"
+              },
+              "en": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "de",
+              "en"
+            ],
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {"anyOf": [{"type": "string"}, {"type": "boolean"}]}
         },
-        "name": {
-          "type": "string"
-        },
-        "value": {"anyOf": [{"type": "string"}, {"type": "boolean"}]}
-      },
-      "required": [
-        "inputHint",
-        "label",
-        "name",
-        "value"
-      ],
-      "type": "object"
+        "required": [
+          "inputHint",
+          "label",
+          "name",
+          "value"
+        ],
+        "type": "object"
+      }
     });
 
     assert_eq!(schema_json, expected);

@@ -36,13 +36,27 @@ fn generate_node_type(dom: &Value) -> NodeType {
 }
 
 fn generate_node_type_for_array_values(array_values: &[Value]) -> BTreeSet<NodeType> {
+    let mut obj_type: Option<NodeType> = None;
     let mut types = BTreeSet::new();
 
     for value in array_values.iter() {
         let value_type = generate_node_type(value);
-        if !types.contains(&value_type) {
-            types.insert(value_type);
-        }
+        match value_type {
+            NodeType::Object { properties: _ } => {
+                obj_type = match obj_type {
+                    Some(acc) => Some(crate::merge::merge_node_type(acc, value_type)),
+                    None => Some(value_type),
+                };
+            }
+            _ => {
+                if !types.contains(&value_type) {
+                    types.insert(value_type);
+                }
+            }
+        };
+    }
+    if let Some(merged_object_type) = obj_type {
+        types.insert(merged_object_type);
     }
 
     types
@@ -58,9 +72,10 @@ pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
 
 #[cfg(test)]
 mod test {
+    use std::collections::BTreeSet;
+
     use maplit::{btreemap, btreeset};
     use serde_json::json;
-    use std::collections::BTreeSet;
 
     use crate::generate::generate_node_type;
     use crate::{NodeType, ObjectProperty};
@@ -97,7 +112,7 @@ mod test {
 
     #[test]
     fn test_array_merge_objects() {
-        let dom = json!([{"a": 1}, {"b": "1"}]);
+        let dom = json!([{"a": 1}, {"a": "1"}]);
         let actual = generate_node_type(&dom);
         let expected = NodeType::Array(btreeset! {
             NodeType::Object {
