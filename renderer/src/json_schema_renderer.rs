@@ -6,6 +6,7 @@ use serde_json::Map;
 
 use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 
+#[must_use]
 pub fn render_schema(schema: &SchemaHypothesis) -> String {
     serde_json::to_string_pretty(&render_json_schema(schema)).unwrap()
 }
@@ -47,7 +48,7 @@ fn generate_array_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
 fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<String, Value> {
     let required_props: Vec<Value> = properties
         .iter()
-        .flat_map(|(key, value)| {
+        .filter_map(|(key, value)| {
             if value.required {
                 Option::Some(Value::String(key.to_string()))
             } else {
@@ -104,7 +105,7 @@ mod test {
                     }
                 }
             )
-        )
+        );
     }
 
     #[test]
@@ -130,7 +131,7 @@ mod test {
                     ]
                 }
             )
-        )
+        );
     }
 
     #[test]
@@ -151,7 +152,7 @@ mod test {
                     }
                 }
             )
-        )
+        );
     }
 
     #[test]
@@ -162,6 +163,6 @@ mod test {
 
         let actual = render_json_schema(&hypothesis);
 
-        assert_eq!(actual, json!({ "type": "array" }))
+        assert_eq!(actual, json!({ "type": "array" }));
     }
 }
