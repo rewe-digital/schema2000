@@ -4,7 +4,6 @@ use serde_json::json;
 use serde_json::value::Value;
 use serde_json::Map;
 
-use crate::utils::SetVariances;
 use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 
 #[must_use]
@@ -39,21 +38,13 @@ fn generate_any_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
     map
 }
 
-fn generate_array_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
+fn generate_array_map(node_type: &Option<Box<NodeType>>) -> Map<String, Value> {
     let mut map = Map::new();
     map.insert("type".to_string(), Value::String("array".to_string()));
-
-    match SetVariances::new(node_types) {
-        SetVariances::Empty => map,
-        SetVariances::OneElement(item) => {
-            map.insert("items".to_string(), render_node(item));
-            map
-        }
-        SetVariances::Multiple(types) => {
-            map.insert("items".to_string(), Value::Object(generate_any_map(types)));
-            map
-        }
-    }
+    node_type
+        .as_ref()
+        .map(|node_type| map.insert("items".to_string(), render_node(node_type)));
+    map
 }
 
 fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<String, Value> {
@@ -86,6 +77,7 @@ fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<Str
 mod test {
     use maplit::{btreemap, btreeset};
     use serde_json::json;
+    use std::collections::BTreeSet;
 
     use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 
@@ -122,7 +114,7 @@ mod test {
     #[test]
     fn test_array() {
         let hypothesis = SchemaHypothesis {
-            root: NodeType::Array(btreeset![NodeType::String, NodeType::Integer]),
+            root: NodeType::new_typed_array(btreeset![NodeType::String, NodeType::Integer]),
         };
 
         let actual = render_json_schema(&hypothesis);
@@ -150,7 +142,7 @@ mod test {
     #[test]
     fn test_array_single_type() {
         let hypothesis = SchemaHypothesis {
-            root: NodeType::Array(btreeset![NodeType::String]),
+            root: NodeType::new_typed_array(btreeset!(NodeType::String)),
         };
 
         let actual = render_json_schema(&hypothesis);
@@ -171,7 +163,7 @@ mod test {
     #[test]
     fn test_empty_array() {
         let hypothesis = SchemaHypothesis {
-            root: NodeType::Array(btreeset![]),
+            root: NodeType::new_untyped_array(),
         };
 
         let actual = render_json_schema(&hypothesis);

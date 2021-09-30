@@ -38,8 +38,15 @@ pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
                 properties: merged_properties,
             }
         }
-        (NodeType::Array(xs), NodeType::Array(ys)) => {
-            NodeType::Array(xs.union(&ys).cloned().collect())
+        (NodeType::Array(None), ys @ NodeType::Array(_)) => ys,
+        (xs @ NodeType::Array(_), NodeType::Array(None)) => xs,
+        (NodeType::Array(Some(xs)), NodeType::Array(Some(ys))) => {
+            NodeType::Array(Some(Box::new(match merge_node_type(*xs, *ys) {
+                NodeType::Any(node_type) if node_type.len() == 1 => {
+                    node_type.iter().next().unwrap().clone()
+                }
+                node_type => node_type,
+            })))
         }
         (NodeType::Any(xs), NodeType::Any(ys)) => NodeType::Any(xs.union(&ys).cloned().collect()),
         (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
@@ -69,12 +76,10 @@ fn merge_object_property(a: Option<&ObjectProperty>, b: Option<&ObjectProperty>)
 
 #[cfg(test)]
 mod test {
-    use maplit::{btreemap, btreeset};
-    use std::collections::BTreeSet;
-
     use crate::merge::{merge_hypothesis, merge_node_type};
     use crate::ObjectProperty;
     use crate::{NodeType, SchemaHypothesis};
+    use maplit::{btreemap, btreeset};
 
     #[test]
     fn test_merge_string() {
@@ -97,42 +102,42 @@ mod test {
 
     #[test]
     fn test_merge_array_without_types() {
-        let a = NodeType::Array(BTreeSet::new());
-        let b = NodeType::Array(BTreeSet::new());
+        let a = NodeType::new_untyped_array();
+        let b = NodeType::new_untyped_array();
 
-        assert_eq!(merge_node_type(a, b), NodeType::Array(BTreeSet::new()));
+        assert_eq!(merge_node_type(a, b), NodeType::new_untyped_array());
     }
 
     #[test]
     fn test_merge_array_with_same_types() {
-        let a = NodeType::Array(btreeset![NodeType::Integer]);
-        let b = NodeType::Array(btreeset![NodeType::Integer]);
+        let a = NodeType::new_typed_array(btreeset!(NodeType::Integer));
+        let b = NodeType::new_typed_array(btreeset!(NodeType::Integer));
 
         assert_eq!(
             merge_node_type(a, b),
-            NodeType::Array(btreeset![NodeType::Integer])
+            NodeType::new_typed_array(btreeset!(NodeType::Integer))
         );
     }
 
     #[test]
     fn test_merge_array_with_one_empty_one_given() {
-        let a = NodeType::Array(btreeset![]);
-        let b = NodeType::Array(btreeset![NodeType::Integer]);
+        let a = NodeType::new_untyped_array();
+        let b = NodeType::new_typed_array(btreeset!(NodeType::Integer));
 
         assert_eq!(
             merge_node_type(a, b),
-            NodeType::Array(btreeset![NodeType::Integer])
+            NodeType::new_typed_array(btreeset!(NodeType::Integer))
         );
     }
 
     #[test]
     fn test_merge_array_with_different_types() {
-        let a = NodeType::Array(btreeset![NodeType::Integer, NodeType::String]);
-        let b = NodeType::Array(btreeset![NodeType::Integer, NodeType::Boolean]);
+        let a = NodeType::new_typed_array(btreeset![NodeType::Integer, NodeType::String]);
+        let b = NodeType::new_typed_array(btreeset![NodeType::Integer, NodeType::Boolean]);
 
         assert_eq!(
             merge_node_type(a, b),
-            NodeType::Array(btreeset![
+            NodeType::new_typed_array(btreeset![
                 NodeType::Integer,
                 NodeType::String,
                 NodeType::Boolean

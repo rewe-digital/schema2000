@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value};
 
+use crate::utils::SetVariances;
 use crate::{NodeType, ObjectProperty, SchemaHypothesis};
 
 fn generate_properties(properties: &Map<String, Value>) -> BTreeMap<String, ObjectProperty> {
@@ -27,7 +28,13 @@ fn generate_node_type(dom: &Value) -> NodeType {
         Value::Number(_) => NodeType::Integer,
         Value::String(_) => NodeType::String,
         Value::Array(array_values) => {
-            NodeType::Array(generate_node_type_for_array_values(array_values))
+            if array_values.is_empty() {
+                NodeType::new_untyped_array()
+            } else {
+                NodeType::Array(Some(Box::new(generate_node_type_for_array_values(
+                    array_values,
+                ))))
+            }
         }
         Value::Object(props) => NodeType::Object {
             properties: generate_properties(props),
@@ -35,7 +42,7 @@ fn generate_node_type(dom: &Value) -> NodeType {
     }
 }
 
-fn generate_node_type_for_array_values(array_values: &[Value]) -> BTreeSet<NodeType> {
+fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
     let mut merged_obj_type: Option<NodeType> = None;
     let mut types = BTreeSet::new();
 
@@ -57,7 +64,11 @@ fn generate_node_type_for_array_values(array_values: &[Value]) -> BTreeSet<NodeT
         types.insert(node_type);
     }
 
-    types
+    match SetVariances::new(&types) {
+        SetVariances::Empty => unreachable!(),
+        SetVariances::OneElement(node_type) => node_type.clone(),
+        SetVariances::Multiple(_) => NodeType::Any(types),
+    }
 }
 
 #[must_use]
@@ -70,8 +81,6 @@ pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
 
 #[cfg(test)]
 mod test {
-    use std::collections::BTreeSet;
-
     use maplit::{btreemap, btreeset};
     use serde_json::json;
 
@@ -112,7 +121,7 @@ mod test {
     fn test_array_merge_objects() {
         let dom = json!(["one", 1, {"a": 1}, {"a": "1"}]);
         let actual = generate_node_type(&dom);
-        let expected = NodeType::Array(btreeset! {
+        let expected = NodeType::new_typed_array(btreeset! {
             NodeType::String,
             NodeType::Integer,
             NodeType::Object {
@@ -123,7 +132,6 @@ mod test {
                 }
             }
         });
-
         assert_eq!(actual, expected);
     }
 
@@ -132,14 +140,14 @@ mod test {
         let dom = json!([10, 15, 25]);
         assert_eq!(
             generate_node_type(&dom),
-            NodeType::Array(btreeset![NodeType::Integer])
+            NodeType::Array(Some(Box::new(NodeType::Integer)))
         );
     }
 
     #[test]
     fn test_array_empty() {
         let dom = json!([]);
-        assert_eq!(generate_node_type(&dom), NodeType::Array(BTreeSet::new()));
+        assert_eq!(generate_node_type(&dom), NodeType::new_untyped_array());
     }
 
     #[test]
@@ -147,7 +155,7 @@ mod test {
         let dom = json!([42, "Hello"]);
         assert_eq!(
             generate_node_type(&dom),
-            NodeType::Array(btreeset![NodeType::Integer, NodeType::String])
+            NodeType::new_typed_array(btreeset![NodeType::Integer, NodeType::String])
         );
     }
 
