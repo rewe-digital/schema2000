@@ -36,27 +36,25 @@ fn generate_node_type(dom: &Value) -> NodeType {
 }
 
 fn generate_node_type_for_array_values(array_values: &[Value]) -> BTreeSet<NodeType> {
-    let mut obj_type: Option<NodeType> = None;
+    let mut merged_obj_type: Option<NodeType> = None;
     let mut types = BTreeSet::new();
 
     for value in array_values.iter() {
         let value_type = generate_node_type(value);
         match value_type {
             NodeType::Object { properties: _ } => {
-                obj_type = match obj_type {
+                merged_obj_type = match merged_obj_type {
                     Some(acc) => Some(crate::merge::merge_node_type(acc, value_type)),
                     None => Some(value_type),
                 };
             }
             _ => {
-                if !types.contains(&value_type) {
-                    types.insert(value_type);
-                }
+                types.insert(value_type);
             }
         };
     }
-    if let Some(merged_object_type) = obj_type {
-        types.insert(merged_object_type);
+    if let Some(node_type) = merged_obj_type {
+        types.insert(node_type);
     }
 
     types
@@ -112,9 +110,11 @@ mod test {
 
     #[test]
     fn test_array_merge_objects() {
-        let dom = json!([{"a": 1}, {"a": "1"}]);
+        let dom = json!(["one", 1, {"a": 1}, {"a": "1"}]);
         let actual = generate_node_type(&dom);
         let expected = NodeType::Array(btreeset! {
+            NodeType::String,
+            NodeType::Integer,
             NodeType::Object {
                 properties: btreemap! {
                     "a".to_string() => ObjectProperty { required: true, node_type: NodeType::Any(
