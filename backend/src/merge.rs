@@ -1,5 +1,6 @@
+use std::collections::{BTreeSet, HashSet};
+
 use maplit::btreeset;
-use std::collections::HashSet;
 
 use crate::SchemaHypothesis;
 use crate::{NodeType, ObjectProperty};
@@ -41,19 +42,46 @@ pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
         (NodeType::Array(None), ys @ NodeType::Array(_)) => ys,
         (xs @ NodeType::Array(_), NodeType::Array(None)) => xs,
         (NodeType::Array(Some(xs)), NodeType::Array(Some(ys))) => {
-            NodeType::Array(Some(Box::new(match merge_node_type(*xs, *ys) {
-                NodeType::Any(node_type) if node_type.len() == 1 => {
-                    node_type.iter().next().unwrap().clone()
-                }
-                node_type => node_type,
-            })))
+            NodeType::Array(Some(Box::new(merge_node_type(*xs, *ys))))
         }
-        (NodeType::Any(xs), NodeType::Any(ys)) => NodeType::Any(xs.union(&ys).cloned().collect()),
+        (NodeType::Any(xs), NodeType::Any(ys)) => merge_any(&xs, ys),
         (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
             merge_node_type(a, NodeType::Any(btreeset![b]))
         }
         (a, b) => merge_node_type(NodeType::Any(btreeset![a]), NodeType::Any(btreeset![b])),
     }
+}
+
+fn merge_any(xs: &BTreeSet<NodeType>, ys: BTreeSet<NodeType>) -> NodeType {
+    let mut zs = xs.clone();
+    for node_type in ys {
+        match node_type {
+            node @ NodeType::Object { .. } => match xs.iter().find(|x| x.is_object()) {
+                None => {
+                    zs.insert(node);
+                }
+                Some(other @ NodeType::Object { .. }) => {
+                    zs.remove(other);
+                    zs.insert(merge_node_type(node, other.clone()));
+                }
+                Some(_) => unreachable!(),
+            },
+            node @ NodeType::Array(_) => match xs.iter().find(|x| x.is_array()) {
+                None => {
+                    zs.insert(node);
+                }
+                Some(other @ NodeType::Array(_)) => {
+                    zs.remove(other);
+                    zs.insert(merge_node_type(node, other.clone()));
+                }
+                Some(_) => unreachable!(),
+            },
+            _ => {
+                zs.insert(node_type);
+            }
+        }
+    }
+    NodeType::Any(zs)
 }
 
 fn merge_object_property(a: Option<&ObjectProperty>, b: Option<&ObjectProperty>) -> ObjectProperty {
@@ -76,10 +104,11 @@ fn merge_object_property(a: Option<&ObjectProperty>, b: Option<&ObjectProperty>)
 
 #[cfg(test)]
 mod test {
+    use maplit::{btreemap, btreeset};
+
     use crate::merge::{merge_hypothesis, merge_node_type};
     use crate::ObjectProperty;
     use crate::{NodeType, SchemaHypothesis};
-    use maplit::{btreemap, btreeset};
 
     #[test]
     fn test_merge_string() {
@@ -142,6 +171,42 @@ mod test {
                 NodeType::String,
                 NodeType::Boolean
             ])
+        );
+    }
+
+    #[test]
+    fn test_merge_array_with_objects() {
+        let a = NodeType::new_typed_array(btreeset![NodeType::Object {
+            properties: btreemap! {
+                "id".to_string() => ObjectProperty {
+                    node_type: NodeType::Integer,
+                    required: true
+                }
+            }
+        }]);
+        let b = NodeType::new_typed_array(btreeset![NodeType::Object {
+            properties: btreemap! {
+                "name".to_string() => ObjectProperty {
+                    node_type: NodeType::String,
+                    required: true
+                }
+            }
+        }]);
+
+        assert_eq!(
+            merge_node_type(a, b),
+            NodeType::new_typed_array(btreeset![NodeType::Object {
+                properties: btreemap! {
+                    "id".to_string() => ObjectProperty {
+                        node_type: NodeType::Integer,
+                        required: false
+                    },
+                    "name".to_string() => ObjectProperty {
+                        node_type: NodeType::String,
+                        required: false
+                    }
+                }
+            }])
         );
     }
 

@@ -77,7 +77,6 @@ fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<Str
 mod test {
     use maplit::{btreemap, btreeset};
     use serde_json::json;
-    use std::collections::BTreeSet;
 
     use backend::{NodeType, ObjectProperty, SchemaHypothesis};
 

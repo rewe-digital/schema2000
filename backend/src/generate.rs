@@ -44,6 +44,7 @@ fn generate_node_type(dom: &Value) -> NodeType {
 
 fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
     let mut merged_obj_type: Option<NodeType> = None;
+    let mut merged_array_type: Option<NodeType> = None;
     let mut types = BTreeSet::new();
 
     for value in array_values.iter() {
@@ -55,12 +56,22 @@ fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
                     None => Some(value_type),
                 };
             }
+            NodeType::Array(_) => {
+                merged_array_type = match merged_array_type {
+                    Some(acc) => Some(crate::merge::merge_node_type(acc, value_type)),
+                    None => Some(value_type),
+                }
+            }
             _ => {
                 types.insert(value_type);
             }
         };
     }
     if let Some(node_type) = merged_obj_type {
+        types.insert(node_type);
+    }
+
+    if let Some(node_type) = merged_array_type {
         types.insert(node_type);
     }
 

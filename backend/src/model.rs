@@ -28,9 +28,22 @@ pub enum NodeType {
 }
 
 impl NodeType {
+    #[must_use]
+    pub fn is_object(&self) -> bool {
+        matches!(self, NodeType::Object { .. })
+    }
+
+    #[must_use]
+    pub fn is_array(&self) -> bool {
+        matches!(self, NodeType::Array(_))
+    }
+
+    #[must_use]
     pub fn new_untyped_array() -> Self {
         Self::new_typed_array(BTreeSet::new())
     }
+
+    #[must_use]
     pub fn new_typed_array(node_types: BTreeSet<NodeType>) -> Self {
         match SetVariances::new(&node_types) {
             SetVariances::Empty => NodeType::Array(None),

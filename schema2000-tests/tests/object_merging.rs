@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{json, to_string_pretty, Value};
 
 use renderer::render_schema;
 
@@ -68,4 +68,150 @@ fn test_distinct_object() {
     });
 
     assert_eq!(schema_json, expected);
+}
+
+#[test]
+fn test_single_object() {
+    let document = json!([
+      {
+        "value": [
+        {
+          "id": 1
+        }, {
+          "name": "irgendwas"
+        },
+        "string",
+        true,
+        5
+      ]
+      }
+    ]);
+
+    let schema = backend::generate_hypothesis(&document);
+
+    let result = render_schema(&schema);
+    let schema_json: Value = serde_json::from_str(&*result).unwrap();
+
+    let expected = json!({
+      "type": "array",
+      "items": {
+        "properties": {
+          "value": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {"type": "string"},
+                {"type": "integer"},
+                {"type": "boolean"},
+                {
+                   "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "name": { "type": "string"}
+                    },
+                    "required": []
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      }
+    });
+
+    assert_eq!(
+        schema_json,
+        expected,
+        "{}",
+        to_string_pretty(&schema_json).unwrap()
+    );
+}
+
+#[test]
+fn test_single_nested_object() {
+    let document = json!([
+        {
+           "value": "some string"
+        },
+        {
+            "value": 42
+        },
+        {
+            "value": {
+                "a": "aaa"
+            }
+        },
+        {
+            "value": {
+                "b": 111
+            }
+        }
+    ]);
+
+    let schema = backend::generate_hypothesis(&document);
+
+    let result = render_schema(&schema);
+    let schema_json: Value = serde_json::from_str(&*result).unwrap();
+
+    let expected = json!({
+          "type": "array",
+          "items": {
+              "type": "object",
+              "properties": {
+                  "value": {
+                      "anyOf": [
+                          {"type": "string"},
+                          {"type": "integer"},
+                          {
+                             "type": "object",
+                              "properties": {
+                                "a": { "type": "string" },
+                                "b": { "type": "integer"}
+                              },
+                              "required": []
+                          }
+                      ]
+                  }
+              },
+              "required": ["value"]
+          }
+    });
+
+    assert_eq!(
+        schema_json,
+        expected,
+        "{}",
+        to_string_pretty(&schema_json).unwrap()
+    );
+}
+
+#[test]
+fn test_array_merging() {
+    let document = json!([[1], ["1"]]);
+
+    let schema = backend::generate_hypothesis(&document);
+
+    let result = render_schema(&schema);
+    let schema_json: Value = serde_json::from_str(&*result).unwrap();
+
+    let expected = json!({
+          "type": "array",
+          "items": {
+              "type": "array",
+              "items": {"anyOf": [
+                {"type": "string"},
+                {"type": "integer"}
+            ]}
+          }
+    });
+
+    assert_eq!(
+        schema_json,
+        expected,
+        "{}",
+        to_string_pretty(&schema_json).unwrap()
+    );
 }
