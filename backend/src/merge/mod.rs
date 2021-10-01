@@ -1,9 +1,12 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::HashSet;
 
 use maplit::btreeset;
 
+use crate::NodeType;
 use crate::SchemaHypothesis;
-use crate::{NodeType, ObjectProperty};
+
+mod any;
+mod object_property;
 
 #[must_use]
 pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypothesis {
@@ -29,7 +32,10 @@ pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
                 .map(|key| {
                     (
                         (*key).to_string(),
-                        merge_object_property(properties_a.get(*key), properties_b.get(*key)),
+                        object_property::merge_object_property(
+                            properties_a.get(*key),
+                            properties_b.get(*key),
+                        ),
                     )
                 })
                 .collect();
@@ -42,61 +48,11 @@ pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
         (NodeType::Array(Some(xs)), NodeType::Array(Some(ys))) => {
             NodeType::Array(Some(Box::new(merge_node_type(*xs, *ys))))
         }
-        (NodeType::Any(xs), NodeType::Any(ys)) => merge_any(&xs, ys),
+        (NodeType::Any(xs), NodeType::Any(ys)) => any::merge_any(&xs, ys),
         (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
             merge_node_type(a, NodeType::Any(btreeset![b]))
         }
         (a, b) => merge_node_type(NodeType::Any(btreeset![a]), NodeType::Any(btreeset![b])),
-    }
-}
-
-fn merge_any(xs: &BTreeSet<NodeType>, ys: BTreeSet<NodeType>) -> NodeType {
-    let mut zs = xs.clone();
-    for node_type in ys {
-        match node_type {
-            node @ NodeType::Object { .. } => match xs.iter().find(|x| x.is_object()) {
-                None => {
-                    zs.insert(node);
-                }
-                Some(other @ NodeType::Object { .. }) => {
-                    zs.remove(other);
-                    zs.insert(merge_node_type(node, other.clone()));
-                }
-                Some(_) => unreachable!(),
-            },
-            node @ NodeType::Array(_) => match xs.iter().find(|x| x.is_array()) {
-                None => {
-                    zs.insert(node);
-                }
-                Some(other @ NodeType::Array(_)) => {
-                    zs.remove(other);
-                    zs.insert(merge_node_type(node, other.clone()));
-                }
-                Some(_) => unreachable!(),
-            },
-            _ => {
-                zs.insert(node_type);
-            }
-        }
-    }
-    NodeType::Any(zs)
-}
-
-fn merge_object_property(a: Option<&ObjectProperty>, b: Option<&ObjectProperty>) -> ObjectProperty {
-    match (a, b) {
-        (Some(a), None) => ObjectProperty {
-            required: false,
-            ..a.clone()
-        },
-        (None, Some(b)) => ObjectProperty {
-            required: false,
-            ..b.clone()
-        },
-        (Some(a), Some(b)) => ObjectProperty {
-            required: a.required && b.required,
-            node_type: merge_node_type(a.clone().node_type, b.clone().node_type),
-        },
-        (None, None) => unreachable!(),
     }
 }
 
