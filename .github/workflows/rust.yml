@@ -70,3 +70,37 @@ jobs:
 
       - name: run the pedantic linter (warnings only)
         run: cargo +nightly clippy --color=always --all-targets -- -W clippy::pedantic
+
+  build:
+    needs: check
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: get rust version
+        id: rustc_version
+        run: echo ::set-output name=version::$(rustc --version)
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ steps.rustc_version.version }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-cargo-   
+
+      - run: cargo build --release
+
+      - run: mv target/release/{frontend,schema2000_${{ runner.os }}}
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v2
+        with:
+          name: schema2000
+          path: target/release/schema2000_${{ runner.os }}
