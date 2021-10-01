@@ -1,4 +1,4 @@
-Schema 2000
+[![Rust](https://github.com/rewe-digital-misc/hackdays2021-schema-2000/actions/workflows/rust.yml/badge.svg)](https://github.com/rewe-digital-misc/hackdays2021-schema-2000/actions/workflows/rust.yml) Schema 2000
 ===========
 
 How to use
