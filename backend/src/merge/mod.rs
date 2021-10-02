@@ -1,8 +1,11 @@
-use crate::model::{AnyNode, ArrayNode, NodeType, ObjectNode, SchemaHypothesis};
+use crate::merge::array::merge_array;
+use crate::merge::object::merge_object;
+use crate::model::{AnyNode, NodeType, SchemaHypothesis};
 use maplit::btreeset;
-use std::collections::HashSet;
 
 mod any;
+mod array;
+mod object;
 mod object_property;
 
 #[must_use]
@@ -14,38 +17,8 @@ pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypot
 pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
     match (a, b) {
         (a, b) if a == b => a,
-        (
-            NodeType::Object(ObjectNode {
-                properties: properties_a,
-            }),
-            NodeType::Object(ObjectNode {
-                properties: properties_b,
-            }),
-        ) => {
-            let keys_a: HashSet<&String> = properties_a.keys().collect();
-            let keys_b: HashSet<&String> = properties_b.keys().collect();
-            let merged_properties = keys_a
-                .union(&keys_b)
-                .map(|key| {
-                    (
-                        (*key).to_string(),
-                        object_property::merge_object_property(
-                            properties_a.get(*key),
-                            properties_b.get(*key),
-                        ),
-                    )
-                })
-                .collect();
-            NodeType::Object(ObjectNode {
-                properties: merged_properties,
-            })
-        }
-        (NodeType::Array(ArrayNode { items: None }), ys @ NodeType::Array(_)) => ys,
-        (xs @ NodeType::Array(_), NodeType::Array(ArrayNode { items: None })) => xs,
-        (
-            NodeType::Array(ArrayNode { items: Some(xs) }),
-            NodeType::Array(ArrayNode { items: Some(ys) }),
-        ) => ArrayNode::new(merge_node_type(*xs, *ys)).into(),
+        (NodeType::Object(a), NodeType::Object(b)) => merge_object(a, b).into(),
+        (NodeType::Array(a), NodeType::Array(b)) => merge_array(a, b).into(),
         (NodeType::Any(xs), NodeType::Any(ys)) => any::merge_any(&xs, ys),
         (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
             merge_node_type(a, AnyNode::new(btreeset![b]).into())
