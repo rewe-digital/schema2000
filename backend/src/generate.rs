@@ -84,7 +84,6 @@ fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
 
 #[must_use]
 pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
-    #![allow(clippy::module_name_repetitions)]
     SchemaHypothesis {
         root: generate_node_type(dom),
     }
