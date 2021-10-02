@@ -7,13 +7,11 @@ use crate::{NodeType, ObjectProperty};
 
 #[must_use]
 pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypothesis {
-    #![allow(clippy::module_name_repetitions)]
     let root = merge_node_type(a.root, b.root);
     SchemaHypothesis { root }
 }
 
 pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
-    #![allow(clippy::module_name_repetitions)]
     match (a, b) {
         (a, b) if a == b => a,
         (
