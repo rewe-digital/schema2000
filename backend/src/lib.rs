@@ -2,9 +2,9 @@
 
 pub use generate::generate_hypothesis;
 pub use merge::merge_hypothesis;
-pub use model::*;
+pub use model::SchemaHypothesis;
 
 mod generate;
 mod merge;
-mod model;
+pub mod model;
 mod utils;

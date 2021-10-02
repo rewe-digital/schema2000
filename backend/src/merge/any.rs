@@ -1,8 +1,10 @@
-use std::collections::BTreeSet;
+use crate::merge;
+use crate::model::{AnyNode, NodeType};
 
-use crate::{merge, NodeType};
+pub fn merge_any(xs: &AnyNode, ys: AnyNode) -> NodeType {
+    let xs = &xs.nodes;
+    let ys = ys.nodes;
 
-pub fn merge_any(xs: &BTreeSet<NodeType>, ys: BTreeSet<NodeType>) -> NodeType {
     let mut zs = xs.clone();
     for node_type in ys {
         match node_type {
@@ -31,5 +33,6 @@ pub fn merge_any(xs: &BTreeSet<NodeType>, ys: BTreeSet<NodeType>) -> NodeType {
             }
         }
     }
-    NodeType::Any(zs)
+
+    AnyNode::new(zs).into()
 }

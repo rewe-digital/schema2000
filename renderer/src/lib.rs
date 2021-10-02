@@ -1,6 +1,6 @@
 mod json_schema_renderer;
 
-use backend::SchemaHypothesis;
+use backend::model::SchemaHypothesis;
 
 pub use json_schema_renderer::render_schema;
 

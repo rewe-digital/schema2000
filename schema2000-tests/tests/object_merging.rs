@@ -55,7 +55,7 @@ fn test_distinct_object() {
           "name": {
             "type": "string"
           },
-          "value": {"anyOf": [{"type": "string"}, {"type": "boolean"}]}
+          "value": {"anyOf": [{"type": "boolean"}, {"type": "string"}]}
         },
         "required": [
           "inputHint",
@@ -100,9 +100,8 @@ fn test_single_object() {
             "type": "array",
             "items": {
               "anyOf": [
-                {"type": "string"},
-                {"type": "integer"},
                 {"type": "boolean"},
+                {"type": "integer"},
                 {
                    "type": "object",
                     "properties": {
@@ -110,7 +109,8 @@ fn test_single_object() {
                       "name": { "type": "string"}
                     },
                     "required": []
-                }
+                },
+                {"type": "string"}
               ]
             }
           }
@@ -163,7 +163,6 @@ fn test_single_nested_object() {
               "properties": {
                   "value": {
                       "anyOf": [
-                          {"type": "string"},
                           {"type": "integer"},
                           {
                              "type": "object",
@@ -172,7 +171,8 @@ fn test_single_nested_object() {
                                 "b": { "type": "integer"}
                               },
                               "required": []
-                          }
+                          },
+                          {"type": "string"}
                       ]
                   }
               },
@@ -202,8 +202,8 @@ fn test_array_merging() {
           "items": {
               "type": "array",
               "items": {"anyOf": [
-                {"type": "string"},
-                {"type": "integer"}
+                {"type": "integer"},
+                {"type": "string"}
             ]}
           }
     });
