@@ -1,4 +1,5 @@
-use crate::{merge, ObjectProperty};
+use crate::merge;
+use crate::model::ObjectProperty;
 
 pub fn merge_object_property(
     a: Option<&ObjectProperty>,

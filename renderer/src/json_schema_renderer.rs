@@ -4,9 +4,10 @@ use serde_json::json;
 use serde_json::value::Value;
 use serde_json::Map;
 
-use backend::{NodeType, ObjectProperty, SchemaHypothesis};
+use backend::model::{ArrayNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis};
 
 #[must_use]
+#[allow(clippy::missing_panics_doc)]
 pub fn render_schema(schema: &SchemaHypothesis) -> String {
     serde_json::to_string_pretty(&render_json_schema(schema)).unwrap()
 }
@@ -17,14 +18,16 @@ fn render_json_schema(schema: &SchemaHypothesis) -> Value {
 
 fn render_node(node_type: &NodeType) -> Value {
     match node_type {
-        NodeType::String => json!({"type": "string"}),
-        NodeType::Integer => json!({"type": "integer"}),
-        NodeType::Number => json!({"type": "number"}),
+        NodeType::String(_) => json!({"type": "string"}),
+        NodeType::Integer(_) => json!({"type": "integer"}),
+        NodeType::Number(_) => json!({"type": "number"}),
         NodeType::Boolean => json!({"type": "boolean"}),
         NodeType::Null => json!({"type": "null"}),
         NodeType::Array(node_types) => Value::Object(generate_array_map(node_types)),
-        NodeType::Object { properties } => Value::Object(generate_object_map(properties)),
-        NodeType::Any(node_types) => Value::Object(generate_any_map(node_types)),
+        NodeType::Object(ObjectNode { properties }) => {
+            Value::Object(generate_object_map(properties))
+        }
+        NodeType::Any(node_types) => Value::Object(generate_any_map(&node_types.nodes)),
     }
 }
 
@@ -38,10 +41,11 @@ fn generate_any_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
     map
 }
 
-fn generate_array_map(node_type: &Option<Box<NodeType>>) -> Map<String, Value> {
+fn generate_array_map(node_type: &ArrayNode) -> Map<String, Value> {
     let mut map = Map::new();
     map.insert("type".to_string(), Value::String("array".to_string()));
     node_type
+        .items
         .as_ref()
         .map(|node_type| map.insert("items".to_string(), render_node(node_type)));
     map
@@ -78,19 +82,18 @@ mod test {
     use maplit::{btreemap, btreeset};
     use serde_json::json;
 
-    use backend::{NodeType, ObjectProperty, SchemaHypothesis};
+    use backend::model::{
+        AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
+        StringNode,
+    };
 
     use crate::json_schema_renderer::{render_json_schema, render_node};
 
     #[test]
     fn test_object() {
-        let hypothesis = SchemaHypothesis {
-            root: NodeType::Object {
-                properties: btreemap! {
-                    "name".to_string() => ObjectProperty{ required: true, node_type: NodeType::String },
-                },
-            },
-        };
+        let hypothesis = SchemaHypothesis::new(ObjectNode::new(btreemap! {
+            "name".to_string() => ObjectProperty::new(StringNode::new()),
+        }));
 
         let actual = render_json_schema(&hypothesis);
 
@@ -112,9 +115,10 @@ mod test {
 
     #[test]
     fn test_array() {
-        let hypothesis = SchemaHypothesis {
-            root: NodeType::new_typed_array(btreeset![NodeType::String, NodeType::Integer]),
-        };
+        let hypothesis = SchemaHypothesis::new(ArrayNode::new_many(btreeset![
+            StringNode::new().into(),
+            IntegerNode::new().into()
+        ]));
 
         let actual = render_json_schema(&hypothesis);
 
@@ -126,10 +130,10 @@ mod test {
                     "items": {
                         "anyOf": [
                             {
-                                "type": "string"
+                                "type": "integer"
                             },
                             {
-                                "type": "integer"
+                                "type": "string"
                             }
                         ]
                     }
@@ -140,9 +144,8 @@ mod test {
 
     #[test]
     fn test_array_single_type() {
-        let hypothesis = SchemaHypothesis {
-            root: NodeType::new_typed_array(btreeset!(NodeType::String)),
-        };
+        let hypothesis =
+            SchemaHypothesis::new(ArrayNode::new_many(btreeset!(StringNode::new().into())));
 
         let actual = render_json_schema(&hypothesis);
 
@@ -161,9 +164,7 @@ mod test {
 
     #[test]
     fn test_empty_array() {
-        let hypothesis = SchemaHypothesis {
-            root: NodeType::new_untyped_array(),
-        };
+        let hypothesis = SchemaHypothesis::new(ArrayNode::new_untyped());
 
         let actual = render_json_schema(&hypothesis);
 
@@ -172,7 +173,7 @@ mod test {
 
     #[test]
     fn test_any() {
-        let node_type = NodeType::Any(btreeset![NodeType::String, NodeType::Boolean]);
+        let node_type = AnyNode::new(btreeset![StringNode::new().into(), NodeType::Boolean]).into();
 
         let actual = render_node(&node_type);
 
@@ -180,8 +181,8 @@ mod test {
             actual,
             json!({
                 "anyOf": [
-                    {"type": "string"},
                     {"type": "boolean"},
+                    {"type": "string"},
                 ]
             })
         );
@@ -189,7 +190,7 @@ mod test {
 
     #[test]
     fn test_any_one() {
-        let node_type = NodeType::Any(btreeset![NodeType::String]);
+        let node_type = AnyNode::new(btreeset![StringNode::new().into()]).into();
 
         let actual = render_node(&node_type);
 
@@ -205,7 +206,7 @@ mod test {
 
     #[test]
     fn test_any_empty() {
-        let node_type = NodeType::Any(btreeset![]);
+        let node_type = AnyNode::new(btreeset![]).into();
 
         let actual = render_node(&node_type);
 
@@ -219,14 +220,11 @@ mod test {
 
     #[test]
     fn test_any_complex_types() {
-        let node_type = NodeType::Any(btreeset![NodeType::Object {
-            properties: btreemap! {
-                "id".to_string() => ObjectProperty {
-                    node_type: NodeType::Integer,
-                    required: true
-                }
-            }
-        }]);
+        let node_type = AnyNode::new(btreeset![ObjectNode::new(btreemap! {
+            "id".to_string() => ObjectProperty::new(IntegerNode::new())
+        })
+        .into()])
+        .into();
 
         let actual = render_node(&node_type);
 
