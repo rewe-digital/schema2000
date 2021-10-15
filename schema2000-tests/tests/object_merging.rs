@@ -1,6 +1,5 @@
+use backend::render_schema;
 use serde_json::{json, to_string_pretty, Value};
-
-use renderer::render_schema;
 
 #[test]
 fn test_distinct_object() {

@@ -3,6 +3,5 @@
 members = [
     "backend",
     "frontend",
-    "renderer",
     "schema2000-tests"
 ]
