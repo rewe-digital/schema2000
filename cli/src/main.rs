@@ -1,4 +1,4 @@
-use backend::{render_schema, SchemaHypothesis};
+use schema2000::{render_schema, SchemaHypothesis};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin = std::io::stdin();
@@ -12,12 +12,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut current_hypothesis: Option<SchemaHypothesis> = None;
 
     for json_document in iterator {
-        let new_hypo = backend::generate_hypothesis(&json_document?);
+        let new_hypo = schema2000::generate_hypothesis(&json_document?);
         if current_hypothesis.is_none() {
             current_hypothesis = Some(new_hypo);
         } else {
             current_hypothesis =
-                current_hypothesis.map(|cur| backend::merge_hypothesis(cur, new_hypo));
+                current_hypothesis.map(|cur| schema2000::merge_hypothesis(cur, new_hypo));
         }
     }
 

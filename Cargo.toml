@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "backend",
-    "frontend",
-    "schema2000-tests"
+    "core",
+    "cli",
+    "test-suite"
 ]

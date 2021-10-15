@@ -1,4 +1,4 @@
-use backend::render_schema;
+use schema2000::render_schema;
 use serde_json::{json, to_string_pretty, Value};
 
 #[test]
@@ -24,7 +24,7 @@ fn test_distinct_object() {
       }
     ]);
 
-    let schema = backend::generate_hypothesis(&document);
+    let schema = schema2000::generate_hypothesis(&document);
 
     let result = render_schema(&schema);
     let schema_json: Value = serde_json::from_str(&*result).unwrap();
@@ -86,7 +86,7 @@ fn test_single_object() {
       }
     ]);
 
-    let schema = backend::generate_hypothesis(&document);
+    let schema = schema2000::generate_hypothesis(&document);
 
     let result = render_schema(&schema);
     let schema_json: Value = serde_json::from_str(&*result).unwrap();
@@ -150,7 +150,7 @@ fn test_single_nested_object() {
         }
     ]);
 
-    let schema = backend::generate_hypothesis(&document);
+    let schema = schema2000::generate_hypothesis(&document);
 
     let result = render_schema(&schema);
     let schema_json: Value = serde_json::from_str(&*result).unwrap();
@@ -191,7 +191,7 @@ fn test_single_nested_object() {
 fn test_array_merging() {
     let document = json!([[1], ["1"]]);
 
-    let schema = backend::generate_hypothesis(&document);
+    let schema = schema2000::generate_hypothesis(&document);
 
     let result = render_schema(&schema);
     let schema_json: Value = serde_json::from_str(&*result).unwrap();
