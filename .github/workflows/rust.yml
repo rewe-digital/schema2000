@@ -97,7 +97,7 @@ jobs:
 
       - run: cargo build --release
 
-      - run: mv target/release/{frontend,schema2000_${{ runner.os }}}
+      - run: mv target/release/schema2000{,_${{ runner.os }}}
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v2

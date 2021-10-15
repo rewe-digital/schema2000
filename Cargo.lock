@@ -3,22 +3,6 @@
 version = 3
 
 [[package]]
-name = "backend"
-version = "0.1.0"
-dependencies = [
- "maplit",
- "serde_json",
-]
-
-[[package]]
-name = "frontend"
-version = "0.1.0"
-dependencies = [
- "backend",
- "serde_json",
-]
-
-[[package]]
 name = "itoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -37,10 +21,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
 
 [[package]]
-name = "schema2000-tests"
+name = "schema2000"
 version = "0.1.0"
 dependencies = [
- "backend",
+ "maplit",
+ "serde_json",
+]
+
+[[package]]
+name = "schema2000-cli"
+version = "0.1.0"
+dependencies = [
+ "schema2000",
+ "serde_json",
+]
+
+[[package]]
+name = "schema2000-test-suite"
+version = "0.0.0"
+dependencies = [
+ "schema2000",
  "serde_json",
 ]
 
