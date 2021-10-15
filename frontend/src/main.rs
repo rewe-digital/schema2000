@@ -1,5 +1,4 @@
-use backend::SchemaHypothesis;
-use renderer::render_schema;
+use backend::{render_schema, SchemaHypothesis};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin = std::io::stdin();

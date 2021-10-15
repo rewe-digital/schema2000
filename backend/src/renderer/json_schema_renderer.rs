@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::model::{ArrayNode, NodeType, ObjectNode, ObjectProperty};
+use crate::SchemaHypothesis;
 use serde_json::json;
 use serde_json::value::Value;
 use serde_json::Map;
-
-use backend::model::{ArrayNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis};
 
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
@@ -82,12 +82,11 @@ mod test {
     use maplit::{btreemap, btreeset};
     use serde_json::json;
 
-    use backend::model::{
+    use crate::model::{
         AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
         StringNode,
     };
-
-    use crate::json_schema_renderer::{render_json_schema, render_node};
+    use crate::renderer::json_schema_renderer::{render_json_schema, render_node};
 
     #[test]
     fn test_object() {

@@ -6,4 +6,3 @@ edition = "2018"
 [dependencies]
 serde_json = "1.0.64"
 backend = { path = "../backend" }
-renderer = { path = "../renderer" }
