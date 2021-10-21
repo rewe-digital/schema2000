@@ -1,5 +1,5 @@
 ---
-name: Unexpected JSON Output
+name: Unexpected Schema Output
 about: Tell us when the produced shema contains unexpected JSON
 title: ''
 labels: ''
