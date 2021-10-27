@@ -1,6 +1,10 @@
 [![Rust](https://github.com/rewe-digital-misc/hackdays2021-schema-2000/actions/workflows/rust.yml/badge.svg)](https://github.com/rewe-digital-misc/hackdays2021-schema-2000/actions/workflows/rust.yml) Schema 2000
 ===========
 
+Schema2000 is a tool that parses exsiting [JSON](https://www.json.org/json-en.html) documents and tries to derive a [JSON schema](https://json-schema.org/) from these documents.
+
+Currently, Schema2000 is configuration-less command line tool that excepts line-separated JSON documents from `stdin` and emits the derived schema to `stdout` once the input is consumed.
+
 How to install
 --------------
 
@@ -13,21 +17,28 @@ macOS will not open the app as the developer can not be verified. As a work-arou
 Usage
 -----
 
-Schema2000 currently is configuration-less, and excepts line-separated-json from stdin and emits the schema to stdout once stdin is consumed.
-
-### How to use
-
+Consume a file with line seperated JSON documents:
 
 ```shell
 $ cat line_separated.json | schema2000
+```
+
+Consume via MQTT (using [Eclipse Mosquitto](https://mosquitto.org/)):
+
+```shell
 $ mosquitto_sub -t homeassistant/event | schema2000
+```
+
+Consume from Kafka (using [kafkacat](https://docs.confluent.io/3.3.0/app-development/kafkacat-usage.html)):
+
+```shell
 $ kafkacat -b $KAFKA_BROKER_ADDRESS_LIST -t your_topic | schema2000
 ```
 
 ### Verify schemas
 
-You may use any JSON schema validator, this example uses [yajsv](https://github.com/neilpa/yajsv).
+You may use any JSON schema validator to validate the input documents with the derived schema. This example uses [yajsv](https://github.com/neilpa/yajsv):
 
 ```shell
-yajsv -s ${TOPIC}_schema.json line_separated.json
+yajsv -s schema.json line_separated.json
 ```
