@@ -29,7 +29,7 @@ Consume via MQTT (using [Eclipse Mosquitto](https://mosquitto.org/)):
 $ mosquitto_sub -t homeassistant/event | schema2000
 ```
 
-Consume from Kafka (using [kafkacat](https://docs.confluent.io/3.3.0/app-development/kafkacat-usage.html)):
+Consume from Kafka (using [kcat](https://github.com/edenhill/kcat#readme)):
 
 ```shell
 $ kafkacat -b $KAFKA_BROKER_ADDRESS_LIST -t your_topic | schema2000
