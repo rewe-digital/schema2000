@@ -6,11 +6,14 @@ How to install
 
 Download the [latest binaries for your operating system](https://github.com/rewe-digital/schema2000/releases), and add them to your `$PATH` and make them executable.
 
+### macOS specific installation
+
+macOS will not open the app as the developer can not be verified. As a work-around, open the folder containing `schema2000_macOS` in Finder, "ctrl-click" on `schema2000_macOS` and click on the menu item "open".  You can then confirm to open the app.  This will open a terminal app session, which you can simply close.
+
 Usage
 -----
 
-Schema2000 currently is configuration-less, and excepts line-separated-json from stdin and emits the schema to stdout 
-once stdin is consumed. 
+Schema2000 currently is configuration-less, and excepts line-separated-json from stdin and emits the schema to stdout once stdin is consumed.
 
 ### How to use
 
