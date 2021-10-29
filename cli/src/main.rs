@@ -1,6 +1,9 @@
+use clap::App;
 use schema2000::{render_schema, SchemaHypothesis};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    parse_arguments();
+
     let stdin = std::io::stdin();
     let stdin = stdin.lock();
 
@@ -24,4 +27,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", result);
 
     Ok(())
+}
+
+fn parse_arguments() {
+    App::new("Schema2000")
+        .version(env!("CARGO_PKG_VERSION"))
+        .author("REWE Digital")//TODO Decide what the author and author email should be
+        .about("Reads a line seperated list of json files from the stdin and generates the JSON Schema which is written to the stdout")
+        .get_matches();
 }
