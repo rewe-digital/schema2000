@@ -7,8 +7,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let deserializer = serde_json::Deserializer::from_reader(stdin);
     let iterator = deserializer.into_iter::<serde_json::Value>();
 
-    //let mut sb = SchemaBuilder::new();
-
     let mut current_hypothesis: Option<SchemaHypothesis> = None;
 
     for json_document in iterator {
