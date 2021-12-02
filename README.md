@@ -44,3 +44,18 @@ You may use any JSON schema validator to validate the input documents with the d
 ```shell
 yajsv -s schema.json line_separated.json
 ```
+
+Schema2000 (kafka) daemon
+-------------------------
+
+The daemon consumes configured kafka topics and produces schemas to given topics.
+
+### Development
+
+A kafka cluster for development may be started via [`docker-compose`](https://docs.docker.com/compose/).
+
+#### Generate testdata
+
+```shell
+mosquitto_sub -t "homeassistant/event" | kcat -b localhost -t homeassistant_event
+```

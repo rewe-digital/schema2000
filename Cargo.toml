@@ -3,5 +3,6 @@
 members = [
     "core",
     "cli",
+    "daemon",
     "test-suite"
 ]
