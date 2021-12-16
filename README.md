@@ -17,7 +17,7 @@ macOS will not open the app as the developer can not be verified. As a work-arou
 Usage
 -----
 
-Consume a file with line seperated JSON documents:
+Consume a file with line separated JSON documents:
 
 ```shell
 $ cat line_separated.json | schema2000
