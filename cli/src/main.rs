@@ -32,7 +32,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn parse_arguments() {
     App::new("Schema2000")
         .version(env!("CARGO_PKG_VERSION"))
-        .author("REWE Digital")//TODO Decide what the author and author email should be
+        .author(AUTHORS)
         .about("Reads a line seperated list of json files from the stdin and generates the JSON Schema which is written to the stdout")
         .get_matches();
 }
+
+const AUTHORS: &str = "Created and maintained by:
+    Elmar Athmer <elmar.athmer@rewe-digital.com>,
+    Lukas Prediger <lukas.prediger@rewe-digital.com>,
+    Stefan Scheidt <stefan.scheidt@rewe-ditial.com,
+    Christoph Baudson,
+    Mischa Dieterle,
+    Patrick Thäle";
