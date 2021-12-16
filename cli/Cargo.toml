@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 description = "Schema2000 is a tool that parses exsiting JSON documents and tries to derive a JSON schema from these documents."
 repository = "https://github.com/rewe-digital/schema2000"
 homepage = "https://github.com/rewe-digital/schema2000"
-categories = ["command line utilities"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
