@@ -1,5 +1,7 @@
-[![Rust](https://github.com/rewe-digital-misc/hackdays2021-schema-2000/actions/workflows/rust.yml/badge.svg)](https://github.com/rewe-digital-misc/hackdays2021-schema-2000/actions/workflows/rust.yml) Schema 2000
+Schema 2000
 ===========
+
+[![Rust](https://github.com/rewe-digital/schema2000/actions/workflows/rust.yml/badge.svg)](https://github.com/rewe-digital/schema2000/actions/workflows/rust.yml) [![crates.io schema2000](https://img.shields.io/crates/v/schema2000?label=schema2000)](https://crates.io/crates/schema2000) [![crates.io schema2000-cli](https://img.shields.io/crates/v/schema2000-cli.svg?label=schema2000-cli)](https://crates.io/crates/schema2000-cli) [![docs.rs schema2000](https://docs.rs/schema2000/badge.svg)](https://docs.rs/schema2000)
 
 Schema2000 is a tool that parses exsiting [JSON](https://www.json.org/json-en.html) documents and tries to derive a [JSON schema](https://json-schema.org/) from these documents.
 
