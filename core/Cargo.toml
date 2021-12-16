@@ -3,6 +3,9 @@ name = "schema2000"
 version = "0.1.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
+description = "Schema2000 is a crate derive a JSON schema from given JSON objects"
+repository = "https://github.com/rewe-digital/schema2000"
+homepage = "https://github.com/rewe-digital/schema2000"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
