@@ -1,4 +1,4 @@
-use clap::App;
+use clap::Command;
 use schema2000::{render_schema, SchemaHypothesis};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn parse_arguments() {
-    App::new("Schema2000")
+    Command::new("Schema2000")
         .version(env!("CARGO_PKG_VERSION"))
         .author(AUTHORS)
         .about("Reads a line seperated list of json files from the stdin and generates the JSON Schema which is written to the stdout")
