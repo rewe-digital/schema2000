@@ -12,7 +12,7 @@ pub fn render_schema(schema: &SchemaHypothesis) -> String {
     serde_json::to_string_pretty(&render_json_schema(schema)).unwrap()
 }
 
-fn render_json_schema(schema: &SchemaHypothesis) -> Value {
+pub fn render_json_schema(schema: &SchemaHypothesis) -> Value {
     render_node(&schema.root)
 }
 

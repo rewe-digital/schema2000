@@ -12,6 +12,7 @@ serde_json = "1.0.72"
 thiserror = "1.0.30"
 tokio = { version = "1.14.0", features = ["full"] }
 schema2000 = { path = "../core" }
+serde = { version = "1.0", features = ["derive"] }
 
 [[bin]]
 name = "schema2000d"

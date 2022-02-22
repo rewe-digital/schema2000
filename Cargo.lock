@@ -481,6 +481,7 @@ dependencies = [
  "futures",
  "rdkafka",
  "schema2000",
+ "serde",
  "serde_json",
  "thiserror",
  "tokio",
