@@ -1,8 +1,8 @@
-use clap::App;
+use clap::Parser;
 use schema2000::{render_schema, SchemaHypothesis};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    parse_arguments();
+    let _args = Args::parse();
 
     let stdin = std::io::stdin();
     let stdin = stdin.lock();
@@ -29,18 +29,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn parse_arguments() {
-    App::new("Schema2000")
-        .version(env!("CARGO_PKG_VERSION"))
-        .author(AUTHORS)
-        .about("Reads a line seperated list of json files from the stdin and generates the JSON Schema which is written to the stdout")
-        .get_matches();
-}
-
-const AUTHORS: &str = "Created and maintained by:
-    Elmar Athmer <elmar.athmer@rewe-digital.com>,
-    Lukas Prediger <lukas.prediger@rewe-digital.com>,
-    Stefan Scheidt <stefan.scheidt@rewe-ditial.com,
-    Christoph Baudson,
-    Mischa Dieterle,
-    Patrick Thäle";
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {}
