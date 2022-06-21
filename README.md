@@ -34,7 +34,7 @@ $ mosquitto_sub -t homeassistant/event | schema2000
 Consume from Kafka (using [kcat](https://github.com/edenhill/kcat#readme)):
 
 ```shell
-$ kafkacat -b $KAFKA_BROKER_ADDRESS_LIST -t your_topic | schema2000
+$ kcat -b $KAFKA_BROKER_ADDRESS_LIST -t your_topic | schema2000
 ```
 
 ### Verify schemas
