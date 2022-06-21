@@ -1,12 +1,12 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use serde_json::{Map, Value};
 
+use crate::merge;
 use crate::model::{
-    AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty,
-    SchemaHypothesis, StringNode,
+    ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty, SchemaHypothesis,
+    StringNode,
 };
-use crate::utils::SetVariances;
 
 fn generate_properties(properties: &Map<String, Value>) -> BTreeMap<String, ObjectProperty> {
     properties
@@ -28,8 +28,8 @@ fn generate_node_type(dom: &Value) -> NodeType {
         Value::Null => NodeType::Null,
         Value::Bool(_) => NodeType::Boolean,
         Value::Number(i) if i.is_f64() => NumberNode::new().into(),
-        Value::Number(_) => IntegerNode::new().into(),
-        Value::String(_) => StringNode::new().into(),
+        Value::Number(i) => IntegerNode::with_value(i.as_i64().unwrap()).into(),
+        Value::String(s) => StringNode::with_value(s).into(),
         Value::Array(array_values) => {
             if array_values.is_empty() {
                 ArrayNode::new_untyped().into()
@@ -42,43 +42,8 @@ fn generate_node_type(dom: &Value) -> NodeType {
 }
 
 fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
-    let mut merged_obj_type: Option<NodeType> = None;
-    let mut merged_array_type: Option<NodeType> = None;
-    let mut types = BTreeSet::new();
-
-    for value in array_values.iter() {
-        let value_type = generate_node_type(value);
-        match value_type {
-            NodeType::Object(ObjectNode { properties: _ }) => {
-                merged_obj_type = match merged_obj_type {
-                    Some(acc) => Some(crate::merge::merge_node_type(acc, value_type)),
-                    None => Some(value_type),
-                };
-            }
-            NodeType::Array(_) => {
-                merged_array_type = match merged_array_type {
-                    Some(acc) => Some(crate::merge::merge_node_type(acc, value_type)),
-                    None => Some(value_type),
-                }
-            }
-            _ => {
-                types.insert(value_type);
-            }
-        };
-    }
-    if let Some(node_type) = merged_obj_type {
-        types.insert(node_type);
-    }
-
-    if let Some(node_type) = merged_array_type {
-        types.insert(node_type);
-    }
-
-    match SetVariances::new(&types) {
-        SetVariances::Empty => unreachable!(),
-        SetVariances::OneElement(node_type) => node_type.clone(),
-        SetVariances::Multiple(_) => AnyNode::new(types).into(),
-    }
+    let node_types: Vec<NodeType> = array_values.iter().map(generate_node_type).collect();
+    merge::merge_node_types(&node_types)
 }
 
 #[must_use]
@@ -114,7 +79,7 @@ mod test {
     #[test]
     fn test_integer() {
         let dom = json!(10);
-        assert_eq!(generate_node_type(&dom), IntegerNode::new().into());
+        assert_eq!(generate_node_type(&dom), IntegerNode::with_value(10).into());
     }
 
     #[test]
@@ -126,23 +91,25 @@ mod test {
     #[test]
     fn test_string() {
         let dom = json!("Schema 2000");
-        assert_eq!(generate_node_type(&dom), StringNode::new().into());
+        assert_eq!(
+            generate_node_type(&dom),
+            StringNode::with_value("Schema 2000").into()
+        );
     }
 
     #[test]
     fn test_array_merge_objects() {
-        let dom = json!(["one", 1, {"a": 1}, {"a": "1"}]);
+        let dom = json!(["one", "two", 1, 2, {"a": 1}, {"a": "1"}]);
         let actual = generate_node_type(&dom);
         let expected = ArrayNode::new_many(btreeset! {
-            StringNode::new().into(),
-            IntegerNode::new().into(),
+            StringNode{values: btreeset!["one".to_string(), "two".to_string()] }.into(),
+            IntegerNode{values: btreeset![1,2] }.into(),
             ObjectNode::new(btreemap! {
                     "a".to_string() => ObjectProperty { required: true, node_type: AnyNode::new(
-                        btreeset! { StringNode::new().into(), IntegerNode::new().into() }
+                        btreeset! { StringNode::with_value("1").into(), IntegerNode::with_value(1).into() }
                     ).into()}
                 }).into()
-        })
-        .into();
+        }).into();
 
         assert_eq!(actual, expected);
     }
@@ -152,7 +119,13 @@ mod test {
         let dom = json!([10, 15, 25]);
         assert_eq!(
             generate_node_type(&dom),
-            ArrayNode::new(IntegerNode::new().into()).into()
+            ArrayNode::new(
+                IntegerNode {
+                    values: btreeset![10, 15, 25]
+                }
+                .into()
+            )
+            .into()
         );
     }
 
@@ -169,8 +142,8 @@ mod test {
         assert_eq!(
             generate_node_type(&dom),
             ArrayNode::new_many(btreeset![
-                IntegerNode::new().into(),
-                StringNode::new().into()
+                IntegerNode::with_value(42).into(),
+                StringNode::with_value("Hello").into()
             ])
             .into()
         );
@@ -183,8 +156,8 @@ mod test {
             "length": 100
         });
         let expected = ObjectNode::new(btreemap! {
-            "name".to_string() => ObjectProperty::new(StringNode::new()),
-            "length".to_string() => ObjectProperty::new(IntegerNode::new()),
+            "name".to_string() => ObjectProperty::new(StringNode::with_value("Schokoladenbrunnen")),
+            "length".to_string() => ObjectProperty::new(IntegerNode::with_value(100)),
         })
         .into();
 

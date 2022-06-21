@@ -1,12 +1,20 @@
 use crate::merge::array::merge_array;
 use crate::merge::object::merge_object;
 use crate::model::{AnyNode, NodeType, SchemaHypothesis};
+use crate::utils::SetVariances;
+use integer::merge_integer;
 use maplit::btreeset;
+use std::collections::{BTreeSet, HashMap};
+use std::iter::FromIterator;
+use std::mem::Discriminant;
+use string::merge_string;
 
 mod any;
 mod array;
+mod integer;
 mod object;
 mod object_property;
+mod string;
 
 #[must_use]
 pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypothesis {
@@ -17,6 +25,8 @@ pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypot
 pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
     match (a, b) {
         (a, b) if a == b => a,
+        (NodeType::Integer(a), NodeType::Integer(b)) => merge_integer(a, b).into(),
+        (NodeType::String(a), NodeType::String(b)) => merge_string(a, b).into(),
         (NodeType::Object(a), NodeType::Object(b)) => merge_object(a, b).into(),
         (NodeType::Array(a), NodeType::Array(b)) => merge_array(a, b).into(),
         (NodeType::Any(xs), NodeType::Any(ys)) => any::merge_any(&xs, ys),
@@ -27,6 +37,26 @@ pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
             AnyNode::new(btreeset![a]).into(),
             AnyNode::new(btreeset![b]).into(),
         ),
+    }
+}
+
+pub fn merge_node_types(node_types: &[NodeType]) -> NodeType {
+    let mut merged_node_types: HashMap<Discriminant<NodeType>, NodeType> = HashMap::new();
+
+    for node_type in node_types.iter().cloned() {
+        let merged_node_type = match merged_node_types.get(&std::mem::discriminant(&node_type)) {
+            None => node_type,
+            Some(existing) => merge_node_type(existing.clone(), node_type),
+        };
+        merged_node_types.insert(std::mem::discriminant(&merged_node_type), merged_node_type);
+    }
+
+    let types = BTreeSet::from_iter(merged_node_types.values().into_iter().cloned());
+
+    match SetVariances::new(&types) {
+        SetVariances::Empty => unreachable!(),
+        SetVariances::OneElement(node_type) => node_type.clone(),
+        SetVariances::Multiple(_) => AnyNode::new(types).into(),
     }
 }
 
@@ -42,12 +72,32 @@ mod test {
 
     #[test]
     fn test_merge_string() {
-        let a = SchemaHypothesis::new(StringNode::new());
-        let b = SchemaHypothesis::new(StringNode::new());
+        let a = SchemaHypothesis::new(StringNode::with_value("a"));
+        let b = SchemaHypothesis::new(StringNode::with_value("b"));
 
         let actual = merge_hypothesis(a, b);
 
-        assert_eq!(actual, SchemaHypothesis::new(StringNode::new()));
+        assert_eq!(
+            actual,
+            SchemaHypothesis::new(StringNode {
+                values: btreeset!["a".to_string(), "b".to_string()]
+            })
+        );
+    }
+
+    #[test]
+    fn test_merge_integer() {
+        let a = SchemaHypothesis::new(IntegerNode::with_value(1));
+        let b = SchemaHypothesis::new(IntegerNode::with_value(2));
+
+        let actual = merge_hypothesis(a, b);
+
+        assert_eq!(
+            actual,
+            SchemaHypothesis::new(IntegerNode {
+                values: btreeset![1, 2]
+            })
+        );
     }
 
     #[test]
@@ -180,15 +230,20 @@ mod test {
 
     #[test]
     fn test_merge_different_types() {
-        let a = StringNode::new().into();
+        let a1 = StringNode::with_value("a1").into();
+        let a2 = StringNode::with_value("a2").into();
         let b = IntegerNode::new().into();
 
-        let actual = merge_node_type(a, b);
+        let actual = merge_node_type(a1, b);
+        let actual = merge_node_type(actual, a2);
 
         assert_eq!(
             actual,
             AnyNode::new(btreeset![
-                StringNode::new().into(),
+                StringNode {
+                    values: btreeset!["a1".to_string(), "a2".to_string()]
+                }
+                .into(),
                 IntegerNode::new().into()
             ])
             .into()
