@@ -23,14 +23,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if hypothesises.contains_key(&MAGIC_KEY) {
             let current = hypothesises.get(&MAGIC_KEY).unwrap().clone();
-            // hypothesises.insert(MAGIC_KEY,
-            //     hypothesises.get(&MAGIC_KEY).unwrap().map(|cur| schema2000::merge_hypothesis(cur, new_hypo));
+            let merged_hypo = schema2000::merge_hypothesis(current, new_hypo);
+            hypothesises.insert(MAGIC_KEY, merged_hypo);
         } else {
             hypothesises.insert(MAGIC_KEY, new_hypo);
         }
     }
 
-    let result = render_schema(&current_hypothesis.unwrap());
+    let result = render_schema(hypothesises.get(&MAGIC_KEY).unwrap());
 
     println!("{}", result);
 
