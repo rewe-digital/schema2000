@@ -1,10 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::model::{ArrayNode, NodeType, ObjectNode, ObjectProperty};
-use crate::SchemaHypothesis;
-use serde_json::json;
 use serde_json::value::Value;
 use serde_json::Map;
+use serde_json::{json, Number};
+
+use crate::model::{ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, StringNode};
+use crate::SchemaHypothesis;
 
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
@@ -18,8 +19,8 @@ fn render_json_schema(schema: &SchemaHypothesis) -> Value {
 
 fn render_node(node_type: &NodeType) -> Value {
     match node_type {
-        NodeType::String(_) => json!({"type": "string"}),
-        NodeType::Integer(_) => json!({"type": "integer"}),
+        NodeType::String(node) => Value::Object(generate_string(node)),
+        NodeType::Integer(node) => Value::Object(generate_integer(node)),
         NodeType::Number(_) => json!({"type": "number"}),
         NodeType::Boolean => json!({"type": "boolean"}),
         NodeType::Null => json!({"type": "null"}),
@@ -29,6 +30,40 @@ fn render_node(node_type: &NodeType) -> Value {
         }
         NodeType::Any(node_types) => Value::Object(generate_any_map(&node_types.nodes)),
     }
+}
+
+fn generate_integer(node: &IntegerNode) -> Map<String, Value> {
+    generate_enumerable("integer", node.values.values(), |v| {
+        Value::Number(Number::from(*v))
+    })
+}
+
+fn generate_string(node: &StringNode) -> Map<String, Value> {
+    generate_enumerable("string", node.values.values(), |v: &String| {
+        // TODO what to do instead of v.to_string to get a &str
+        Value::String(v.to_string())
+    })
+}
+
+fn generate_enumerable<T>(
+    type_as_string: &str,
+    values: Option<Vec<&T>>,
+    serde_value_supplier: fn(&T) -> Value,
+) -> Map<String, Value> {
+    let mut map = Map::new();
+    map.insert(
+        "type".to_string(),
+        Value::String(type_as_string.to_string()),
+    );
+    if let Some(vs) = values {
+        if !vs.is_empty() {
+            map.insert(
+                "enum".to_string(),
+                Value::Array(vs.into_iter().map(serde_value_supplier).collect()),
+            );
+        }
+    }
+    map
 }
 
 fn generate_any_map(node_types: &BTreeSet<NodeType>) -> Map<String, Value> {
@@ -56,9 +91,9 @@ fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<Str
         .iter()
         .filter_map(|(key, value)| {
             if value.required {
-                Option::Some(Value::String(key.to_string()))
+                Some(Value::String(key.to_string()))
             } else {
-                Option::None
+                None
             }
         })
         .collect();
@@ -84,9 +119,44 @@ mod test {
 
     use crate::model::{
         AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
-        StringNode,
+        StringNode, ValueCollection,
     };
     use crate::renderer::json_schema_renderer::{render_json_schema, render_node};
+
+    #[test]
+    fn test_string_without_values() {
+        let hypothesis = SchemaHypothesis::new(StringNode {
+            values: ValueCollection::empty_collection(),
+        });
+
+        let actual = render_json_schema(&hypothesis);
+
+        assert_eq!(
+            actual,
+            json!(
+                {
+                    "type": "string"
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn test_string_with_values() {
+        let hypothesis = SchemaHypothesis::new(StringNode::with_values(vec!["a", "b", "c"]));
+
+        let actual = render_json_schema(&hypothesis);
+
+        assert_eq!(
+            actual,
+            json!(
+                {
+                    "type": "string",
+                    "enum": ["a", "b", "c"]
+                }
+            )
+        );
+    }
 
     #[test]
     fn test_object() {

@@ -33,6 +33,12 @@ impl<T: Clone + Ord> ValueCollection<T> {
         Self { values: None }
     }
 
+    pub fn values(&self) -> Option<Vec<&T>> {
+        self.values
+            .as_ref()
+            .map(|value_set| value_set.iter().collect())
+    }
+
     pub fn merge(&self, other: &ValueCollection<T>) -> ValueCollection<T> {
         match (&self.values, &other.values) {
             (Some(sv), Some(ov)) => {

@@ -34,15 +34,18 @@ fn test_distinct_object() {
       "items": {
         "properties": {
           "inputHint": {
-            "type": "string"
+            "type": "string",
+            "enum": ["SINGLE_LINE"]
           },
           "label": {
             "properties": {
               "de": {
-                "type": "string"
+                "type": "string",
+                "enum": ["Batch Management Requirement", "Marke (DSD)"]
               },
               "en": {
-                "type": "string"
+                "type": "string",
+                "enum": ["Batch Management Requirement", "Brand"]
               }
             },
             "required": [
@@ -52,9 +55,13 @@ fn test_distinct_object() {
             "type": "object"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "enum": ["BatchManagementRequirement", "Brand"]
           },
-          "value": {"anyOf": [{"type": "boolean"}, {"type": "string"}]}
+          "value": {"anyOf": [
+                {"type": "boolean"},
+                {"type": "string", "enum": ["MAGGI"]}
+            ]}
         },
         "required": [
           "inputHint",
@@ -100,16 +107,16 @@ fn test_single_object() {
             "items": {
               "anyOf": [
                 {"type": "boolean"},
-                {"type": "integer"},
+                {"type": "integer", "enum": [5]},
                 {
                    "type": "object",
                     "properties": {
-                      "id": { "type": "integer" },
-                      "name": { "type": "string"}
+                      "id": { "type": "integer", "enum": [1] },
+                      "name": { "type": "string", "enum": ["irgendwas"]}
                     },
                     "required": []
                 },
-                {"type": "string"}
+                {"type": "string", "enum": ["string"]}
               ]
             }
           }
@@ -162,16 +169,16 @@ fn test_single_nested_object() {
               "properties": {
                   "value": {
                       "anyOf": [
-                          {"type": "integer"},
+                          {"type": "integer", "enum": [42]},
                           {
                              "type": "object",
                               "properties": {
-                                "a": { "type": "string" },
-                                "b": { "type": "integer"}
+                                "a": { "type": "string", "enum": ["aaa"] },
+                                "b": { "type": "integer", "enum": [111] }
                               },
                               "required": []
                           },
-                          {"type": "string"}
+                          {"type": "string", "enum": ["some string"]}
                       ]
                   }
               },
@@ -201,8 +208,8 @@ fn test_array_merging() {
           "items": {
               "type": "array",
               "items": {"anyOf": [
-                {"type": "integer"},
-                {"type": "string"}
+                {"type": "integer", "enum": [1]},
+                {"type": "string", "enum": ["1"]}
             ]}
           }
     });
