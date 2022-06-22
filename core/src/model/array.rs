@@ -3,7 +3,6 @@ use crate::model::node_type::NodeType;
 
 use std::collections::BTreeSet;
 
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ArrayNode {
     pub items: Option<Box<NodeType>>,

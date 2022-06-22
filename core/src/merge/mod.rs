@@ -67,7 +67,7 @@ mod test {
     use crate::merge::{merge_hypothesis, merge_node_type};
     use crate::model::{
         AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
-        StringNode,
+        StringNode, ValueCollection,
     };
 
     #[test]
@@ -79,9 +79,7 @@ mod test {
 
         assert_eq!(
             actual,
-            SchemaHypothesis::new(StringNode {
-                values: btreeset!["a".to_string(), "b".to_string()]
-            })
+            SchemaHypothesis::new(StringNode::with_values(vec!("a", "b")))
         );
     }
 
@@ -94,9 +92,7 @@ mod test {
 
         assert_eq!(
             actual,
-            SchemaHypothesis::new(IntegerNode {
-                values: btreeset![1, 2]
-            })
+            SchemaHypothesis::new(IntegerNode::with(ValueCollection::with_values(vec!(1, 2))))
         );
     }
 
@@ -240,10 +236,7 @@ mod test {
         assert_eq!(
             actual,
             AnyNode::new(btreeset![
-                StringNode {
-                    values: btreeset!["a1".to_string(), "a2".to_string()]
-                }
-                .into(),
+                StringNode::with_values(vec!("a1", "a2")).into(),
                 IntegerNode::new().into()
             ])
             .into()

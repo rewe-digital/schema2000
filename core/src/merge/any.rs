@@ -1,4 +1,3 @@
-
 use crate::merge::merge_node_types;
 use crate::model::{AnyNode, NodeType};
 

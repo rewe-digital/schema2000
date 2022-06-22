@@ -61,7 +61,7 @@ mod test {
     use crate::generate::generate_node_type;
     use crate::model::{
         AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty,
-        StringNode,
+        StringNode, ValueCollection,
     };
 
     #[test]
@@ -102,8 +102,8 @@ mod test {
         let dom = json!(["one", "two", 1, 2, {"a": 1}, {"a": "1"}]);
         let actual = generate_node_type(&dom);
         let expected = ArrayNode::new_many(btreeset! {
-            StringNode{values: btreeset!["one".to_string(), "two".to_string()] }.into(),
-            IntegerNode{values: btreeset![1,2] }.into(),
+            StringNode::with_values(vec!("one", "two")).into(),
+            IntegerNode::with(ValueCollection::with_values(vec!(1,2))).into(),
             ObjectNode::new(btreemap! {
                     "a".to_string() => ObjectProperty { required: true, node_type: AnyNode::new(
                         btreeset! { StringNode::with_value("1").into(), IntegerNode::with_value(1).into() }
@@ -120,10 +120,7 @@ mod test {
         assert_eq!(
             generate_node_type(&dom),
             ArrayNode::new(
-                IntegerNode {
-                    values: btreeset![10, 15, 25]
-                }
-                .into()
+                IntegerNode::with(ValueCollection::with_values(vec!(10, 15, 25))).into()
             )
             .into()
         );
