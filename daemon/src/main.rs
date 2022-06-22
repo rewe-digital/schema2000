@@ -85,6 +85,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let stream: MessageStream = consumer.stream();
 
+    let mut cur_topic = "undefined".to_string();
+    let mut cur_partition = 0;
+    let mut cur_offset: i64 = 0;
+
     // turn the stream of messages into a stream of schema hypothesis
     let mut schema_stream = stream.map(
         |m| -> Result<Option<KafkaSchemaHypothesis>, Box<dyn Error>> {
@@ -93,6 +97,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let offset = owned_message.offset();
             let partition = owned_message.partition();
             let key = owned_message.key().map(|k| k.to_owned());
+
+            if cur_topic != topic || cur_partition != partition || 100 < offset - cur_offset {
+                cur_topic = topic.clone();
+                cur_partition = partition;
+                cur_offset = offset;
+
+                println!("{cur_topic}_{cur_partition}_{cur_offset}");
+            }
 
             let schema = owned_message
                 .payload_view::<str>()
