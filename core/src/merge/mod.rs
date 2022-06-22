@@ -1,6 +1,7 @@
 use crate::merge::array::merge_array;
 use crate::merge::object::merge_object;
-use crate::model::{AnyNode, NodeType, SchemaHypothesis};
+use crate::model::NodeType::{Object, String};
+use crate::model::{AnyNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis, StringNode};
 use crate::utils::SetVariances;
 use integer::merge_integer;
 use maplit::btreeset;
@@ -46,10 +47,29 @@ pub fn merge_hypothesis_disc(
     // Wenn Wert von b in bestehend auftaucht: "damit" normales merge
     // Wenn nicht: AnyOf erweitern
 
-    // in allen anderen Fällen: normales Merge
+    // in allen anderen Fällen: skip Merge
 
     let root = merge_node_type(a.root, b.root);
     SchemaHypothesis { root }
+}
+
+fn extract_discriminator_value(
+    hypothesis: &SchemaHypothesis,
+    discriminator: &str,
+) -> Option<String> {
+    match &hypothesis.root {
+        Object(ObjectNode { properties }) => {
+            let discriminator_property = properties.get(discriminator);
+            match discriminator_property {
+                Some(ObjectProperty { node_type, .. }) => match node_type {
+                    String(StringNode { values }) => None,
+                    _ => None,
+                },
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
@@ -94,7 +114,7 @@ pub fn merge_node_types(node_types: &[NodeType]) -> NodeType {
 mod test {
     use maplit::{btreemap, btreeset};
 
-    use crate::merge::{merge_hypothesis, merge_node_type};
+    use crate::merge::{extract_discriminator_value, merge_hypothesis, merge_node_type};
     use crate::model::{
         AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
         StringNode, ValueCollection,
@@ -326,5 +346,15 @@ mod test {
             ])
             .into()
         );
+    }
+
+    #[test]
+    fn test_extract_discriminator_value() {
+        let a = SchemaHypothesis::new(ObjectNode::new(btreemap! {
+            String::from("type") => ObjectProperty::new(StringNode::with_value("a")),
+            String::from("name") => ObjectProperty::new(StringNode::new())
+        }));
+        let actual = extract_discriminator_value(&a, "type");
+        assert_eq!(Some("a".to_string()), actual)
     }
 }
