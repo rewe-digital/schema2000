@@ -53,10 +53,12 @@ fn extract_discriminator(document: &Value) -> String {
 #[cfg(test)]
 mod test {
     use crate::generate_hypothesis_from_jsons;
+    use crate::model::NodeType;
     use crate::model::NodeType::Object;
-    use crate::model::ObjectNode;
-    use maplit::hashmap;
-    use serde_json::{json, Value};
+    use maplit::hashset;
+    use serde_json::Value;
+    use std::collections::HashSet;
+    use std::iter::FromIterator;
 
     #[test]
     fn test_array_merge_objects() {
@@ -73,28 +75,21 @@ mod test {
         let actual = generate_hypothesis_from_jsons(json_documents).unwrap();
 
         assert_eq!(
-            actual.keys().collect::<Vec<&String>>(),
-            vec!("address", "name")
+            actual.keys().map(String::as_str).collect::<HashSet<&str>>(),
+            hashset! {"address", "name"}
         );
 
-        let top_level_keys = actual
-            .iter()
-            .map(|(discriminant, hypo)| match &hypo.root {
-                Object(obj_node) => (
-                    discriminant,
-                    obj_node.properties.keys().collect::<Vec<&String>>(),
-                ),
-                _ => unreachable!(),
-            })
-            .collect();
+        let address_toplevel_keys = get_toplevel_properties(&actual.get("address").unwrap().root);
+        let name_toplevel_keys = get_toplevel_properties(&actual.get("name").unwrap().root);
 
-        assert_eq!(top_level_keys.get("address"), vec!("number", "street"));
-        assert_eq!(top_level_keys.get("name"), vec!("first_name", "last_name"));
+        assert_eq!(address_toplevel_keys, hashset! {"number", "street"});
+        assert_eq!(name_toplevel_keys, hashset! {"first_name", "last_name"});
+    }
 
-        println!("{:?}", top_level_keys)
-        // let expected = hashmap! {
-        //     "address" => ObjectNode { properties:  }
-        // }
-        // assert_eq!(actual, expected);
+    fn get_toplevel_properties(root_node: &NodeType) -> HashSet<&str> {
+        match root_node {
+            Object(obj_node) => HashSet::from_iter(obj_node.properties.keys().map(String::as_str)),
+            _ => unreachable!(),
+        }
     }
 }
