@@ -14,7 +14,30 @@ pub mod model;
 mod renderer;
 mod utils;
 
+const DISCRIMINATOR_KEY: &str = "type";
+
 pub fn generate_hypothesis_from_jsons(
+    json_documents: Vec<serde_json::Result<Value>>,
+) -> Result<HashMap<String, SchemaHypothesis>, Box<dyn std::error::Error>> {
+    let mut hypothesises: HashMap<String, SchemaHypothesis> = HashMap::new();
+
+    for json_document in json_documents {
+        let document = &json_document?;
+        let discriminator_key = &extract_discriminator(document);
+        let new_hypo = generate_hypothesis(extract_payload(document));
+
+        if hypothesises.contains_key(discriminator_key) {
+            let current = hypothesises.get(discriminator_key).unwrap().clone();
+            let merged_hypo = merge_hypothesis(current, new_hypo);
+            hypothesises.insert(discriminator_key.to_string(), merged_hypo);
+        } else {
+            hypothesises.insert(discriminator_key.to_string(), new_hypo);
+        }
+    }
+    Ok(hypothesises)
+}
+
+pub fn generate_hypothesis_from_jsons_with_discriminator(
     json_documents: Vec<serde_json::Result<Value>>,
 ) -> Result<HashMap<String, SchemaHypothesis>, Box<dyn std::error::Error>> {
     let mut hypothesises: HashMap<String, SchemaHypothesis> = HashMap::new();
@@ -43,7 +66,7 @@ fn extract_discriminator(document: &Value) -> String {
     document
         .as_object()
         .unwrap()
-        .get("discriminator")
+        .get(DISCRIMINATOR_KEY)
         .unwrap()
         .as_str()
         .unwrap()
@@ -61,12 +84,12 @@ mod test {
     use std::iter::FromIterator;
 
     #[test]
-    fn test_array_merge_objects() {
-        let json_lines = "{ \"discriminator\": \"address\", \"payload\": { \"street\": \"Foo-Avenue\", \"number\": 15 } }\n\
-            { \"discriminator\": \"address\", \"payload\": { \"street\": \"Central\", \"number\": 10 } }\n\
-            { \"discriminator\": \"name\", \"payload\": { \"first_name\": \"First\", \"last_name\": \"Last\" } }\n\
-            { \"discriminator\": \"name\", \"payload\": { \"first_name\": \"Last\", \"last_name\": 2 } }\n\
-            { \"discriminator\": \"name\", \"payload\": { \"first_name\": \"Last\" } }";
+    fn test_json_processing() {
+        let json_lines = "{ \"type\": \"address\", \"payload\": { \"street\": \"Foo-Avenue\", \"number\": 15 } }\n\
+            { \"type\": \"address\", \"payload\": { \"street\": \"Central\", \"number\": 10 } }\n\
+            { \"type\": \"name\", \"payload\": { \"first_name\": \"First\", \"last_name\": \"Last\" } }\n\
+            { \"type\": \"name\", \"payload\": { \"first_name\": \"Last\", \"last_name\": 2 } }\n\
+            { \"type\": \"name\", \"payload\": { \"first_name\": \"Last\" } }";
 
         let deserializer = serde_json::Deserializer::from_str(json_lines);
 
