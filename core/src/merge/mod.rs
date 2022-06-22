@@ -22,6 +22,36 @@ pub fn merge_hypothesis(a: SchemaHypothesis, b: SchemaHypothesis) -> SchemaHypot
     SchemaHypothesis { root }
 }
 
+#[must_use]
+pub fn merge_hypothesis_disc(
+    a: SchemaHypothesis,
+    b: SchemaHypothesis,
+    discrimiator: &str,
+) -> SchemaHypothesis {
+    // 1. Fall
+    // a ist object
+    // und hat property "discrimiator" mit Typ String und genau einen Wert in ValueCollection
+    // und b ist object
+    // und hat property "discrimiator" mit Typ String und genau einen Wert in ValueCollection
+    // dann:
+    // Wenn Werte identisch: normales merge
+    // Wenn nicht: AnyOf aufbauen
+
+    // 2. Fall
+    // a ist anyOf
+    // und es gibt objects mit property "discrimiator" mit Typ String und genau einen Wert in ValueCollection
+    // und b ist object
+    // und hat property "discrimiator" mit Typ String und genau einen Wert in ValueCollection
+    // dann:
+    // Wenn Wert von b in bestehend auftaucht: "damit" normales merge
+    // Wenn nicht: AnyOf erweitern
+
+    // in allen anderen Fällen: normales Merge
+
+    let root = merge_node_type(a.root, b.root);
+    SchemaHypothesis { root }
+}
+
 pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
     match (a, b) {
         (a, b) if a == b => a,
