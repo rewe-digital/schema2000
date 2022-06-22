@@ -1,3 +1,4 @@
+use std::env;
 use std::error::Error;
 use std::time::Duration;
 
@@ -48,8 +49,13 @@ impl From<KafkaSchemaHypothesis> for SchemaHypothesisMessage {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let consumer: StreamConsumer = ClientConfig::new()
-        .set("bootstrap.servers", "localhost")
-        .set("group.id", "kcat")
+        .set("bootstrap.servers", env::var("BOOTSTRAP_SERVERS")?)
+        .set("security.protocol", "SASL_SSL")
+        .set("ssl.ca.location", env::var("SSL_CA_LOCATION")?)
+        .set("sasl.mechanisms", "PLAIN")
+        .set("sasl.username", env::var("SASL_USERNAME")?)
+        .set("sasl.password", env::var("SASL_PASSWORD")?)
+        .set("group.id", "schema2000")
         .set("enable.auto.commit", "false")
         .set("auto.offset.reset", "earliest")
         .create()
@@ -74,6 +80,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // …and subscribe to all of them
     consumer.subscribe(&topics).unwrap();
+
+    println!("consuming topics: {:?}", &topics);
 
     let stream: MessageStream = consumer.stream();
 
@@ -166,8 +174,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // This will be executed when the result is received.
             println!(
-                "{:?}, {:?}",
-                delivery_status_events, delivery_status_compact
+                "published new schema for topic: {}, {:?}, {:?}",
+                &*message.topic, delivery_status_events, delivery_status_compact
             );
         }
     }
