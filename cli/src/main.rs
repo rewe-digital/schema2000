@@ -1,12 +1,10 @@
-use std::collections::HashMap;
 use std::io::StdinLock;
-use std::ops::Deref;
 
 use clap::Parser;
 use serde_json::de::IoRead;
 use serde_json::{StreamDeserializer, Value};
 
-use schema2000::{generate_hypothesis_from_jsons, render_schema, SchemaHypothesis};
+use schema2000::{generate_hypothesis_from_jsons, render_schema};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _args = Args::parse();
