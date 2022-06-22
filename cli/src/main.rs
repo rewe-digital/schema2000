@@ -1,5 +1,11 @@
+use std::collections::HashMap;
+use std::ops::Deref;
+
 use clap::Parser;
+
 use schema2000::{render_schema, SchemaHypothesis};
+
+const MAGIC_KEY: String = "hypothesis".to_string();
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _args = Args::parse();
@@ -10,15 +16,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let deserializer = serde_json::Deserializer::from_reader(stdin);
     let iterator = deserializer.into_iter::<serde_json::Value>();
 
-    let mut current_hypothesis: Option<SchemaHypothesis> = None;
+    let mut hypothesises: HashMap<String, SchemaHypothesis> = HashMap::new();
 
     for json_document in iterator {
         let new_hypo = schema2000::generate_hypothesis(&json_document?);
-        if current_hypothesis.is_none() {
-            current_hypothesis = Some(new_hypo);
+
+        if hypothesises.contains_key(&MAGIC_KEY) {
+            let current = hypothesises.get(&MAGIC_KEY).unwrap().clone();
+            // hypothesises.insert(MAGIC_KEY,
+            //     hypothesises.get(&MAGIC_KEY).unwrap().map(|cur| schema2000::merge_hypothesis(cur, new_hypo));
         } else {
-            current_hypothesis =
-                current_hypothesis.map(|cur| schema2000::merge_hypothesis(cur, new_hypo));
+            hypothesises.insert(MAGIC_KEY, new_hypo);
         }
     }
 
