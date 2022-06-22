@@ -12,6 +12,9 @@ use serde_json::Value;
 
 use schema2000::{generate_hypothesis, render_json_schema, SchemaHypothesis};
 
+const TOPIC_SCHEMA: &str = "schema2000";
+const TOPIC_SCHEMA_LATEST: &str = "schema2000_latest";
+
 #[derive(Clone, PartialEq)]
 struct KafkaSchemaHypothesis {
     hypothesis: SchemaHypothesis,
@@ -58,7 +61,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .create()
         .expect("Producer creation error");
 
-    consumer.subscribe(&["homeassistant_event"]).unwrap();
+    // get all topics
+    let metadata = consumer.fetch_metadata(None, Duration::from_secs(60))?;
+    let topics: Vec<&str> = metadata
+        .topics()
+        .iter()
+        .map(|t| t.name())
+        // remove our own topic, and 'internal' topics (starting with underscores)
+        // TODO: is there an official documentation how to detect (kafka-internal) topics? This underscore-stuff ist just guessing here.
+        .filter(|&t| t != TOPIC_SCHEMA && t != TOPIC_SCHEMA_LATEST && !t.starts_with("_"))
+        .collect();
+
+    // …and subscribe to all of them
+    consumer.subscribe(&topics).unwrap();
 
     let stream: MessageStream = consumer.stream();
 
@@ -131,15 +146,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let payload: String = serde_json::to_string(&message).unwrap();
 
             let delivery_status_events = producer.send(
-                FutureRecord::to("schema2000")
+                FutureRecord::to(TOPIC_SCHEMA)
                     .payload(&payload)
                     .key(&*message.topic),
-                //.headers(OwnedHeaders::new().add("header_key", "header_value")),
+                //.headers(OwnedHeaders::new().add("header_key", "header_value")), // TODO: add the schema2000 version/commit as header
                 Duration::from_secs(0),
             );
 
             let delivery_status_compact = producer.send(
-                FutureRecord::to("schema2000_latest")
+                FutureRecord::to(TOPIC_SCHEMA_LATEST)
                     .payload(&payload)
                     .key(&*message.topic),
                 //.headers(OwnedHeaders::new().add("header_key", "header_value")),
