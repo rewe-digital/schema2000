@@ -1,5 +1,10 @@
-use schema2000::render_schema;
+use maplit::hashmap;
+use schema2000::{render_schemas, SchemaHypothesis};
 use serde_json::{json, to_string_pretty, Value};
+
+fn render_schema(schema: &SchemaHypothesis) -> String {
+    render_schemas(hashmap! {"some_key".to_string() => schema.clone()})
+}
 
 #[test]
 fn test_distinct_object() {

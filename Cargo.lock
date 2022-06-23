@@ -194,6 +194,7 @@ dependencies = [
 name = "schema2000-test-suite"
 version = "0.0.0"
 dependencies = [
+ "maplit",
  "schema2000",
  "serde_json",
 ]

@@ -1,6 +1,8 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::iter::FromIterator;
 
-use crate::model::{ArrayNode, NodeType, ObjectNode, ObjectProperty};
+use crate::model::NodeType::Any;
+use crate::model::{AnyNode, ArrayNode, NodeType, ObjectNode, ObjectProperty};
 use crate::SchemaHypothesis;
 use serde_json::json;
 use serde_json::value::Value;
@@ -8,12 +10,16 @@ use serde_json::Map;
 
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
-pub fn render_schema(schema: &SchemaHypothesis) -> String {
-    serde_json::to_string_pretty(&render_json_schema(schema)).unwrap()
+pub fn render_schemas(schemas: HashMap<String, SchemaHypothesis>) -> String {
+    serde_json::to_string_pretty(&render_json_schemas(schemas)).unwrap()
 }
 
-fn render_json_schema(schema: &SchemaHypothesis) -> Value {
-    render_node(&schema.root)
+fn render_json_schemas(schemas: HashMap<String, SchemaHypothesis>) -> Value {
+    let sub_schemas: Vec<NodeType> = schemas.values().map(|hypo| &hypo.root).cloned().collect();
+    let new_toplevel_node = Any(AnyNode {
+        nodes: BTreeSet::from_iter(sub_schemas),
+    });
+    render_node(&new_toplevel_node)
 }
 
 fn render_node(node_type: &NodeType) -> Value {
@@ -79,14 +85,18 @@ fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<Str
 
 #[cfg(test)]
 mod test {
-    use maplit::{btreemap, btreeset};
-    use serde_json::json;
+    use maplit::{btreemap, btreeset, hashmap};
+    use serde_json::{json, Value};
 
     use crate::model::{
         AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
         StringNode,
     };
-    use crate::renderer::json_schema_renderer::{render_json_schema, render_node};
+    use crate::renderer::json_schema_renderer::{render_json_schemas, render_node, render_schemas};
+
+    fn render_json_schema(schema: &SchemaHypothesis) -> Value {
+        render_json_schemas(hashmap! {"some_key".to_string() => schema.clone()})
+    }
 
     #[test]
     fn test_object() {

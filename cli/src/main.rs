@@ -4,7 +4,7 @@ use clap::Parser;
 use serde_json::de::IoRead;
 use serde_json::{StreamDeserializer, Value};
 
-use schema2000::{generate_hypothesis_from_jsons, render_schema};
+use schema2000::{generate_hypothesis_from_jsons, render_schemas};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _args = Args::parse();
@@ -18,10 +18,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // TODO make use_discriminator configurable before merging, and set it by default to false in order to stay backward compatible
     let hypothesises = generate_hypothesis_from_jsons(iterator.collect(), true)?;
 
-    hypothesises.values().for_each(|hypo| {
-        let result = render_schema(hypo);
-        println!("{}", result);
-    });
+    let result = render_schemas(hypothesises);
+    println!("{}", result);
 
     Ok(())
 }

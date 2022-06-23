@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub use generate::generate_hypothesis;
 pub use merge::merge_hypothesis;
 pub use model::SchemaHypothesis;
-pub use renderer::render_schema;
+pub use renderer::render_schemas;
 
 mod generate;
 mod merge;
@@ -77,8 +77,6 @@ mod test {
         let json_documents = deserializer.into_iter::<Value>().collect();
 
         let actual = generate_hypothesis_from_jsons(json_documents, true).unwrap();
-
-        println!("{:?}", actual);
 
         assert_eq!(
             actual.keys().map(String::as_str).collect::<HashSet<&str>>(),
