@@ -1,12 +1,15 @@
 version: "3"
+
 services:
   zookeeper:
+    network_mode: host
     image: "wurstmeister/zookeeper:latest"
     ports:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
   kafka:
+    network_mode: host
     image: "wurstmeister/kafka:latest"
     ports:
       - "9092:9092"
@@ -14,9 +17,16 @@ services:
       - KAFKA_BROKER_ID=1
       - KAFKA_LISTENERS=PLAINTEXT://:9092
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ZOOKEEPER_CONNECT=localhost:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=false
       - KAFKA_CREATE_TOPICS=homeassistant_event:12:1,schema2000:12:1,schema2000_latest:12:1:compact
     depends_on:
       - zookeeper
+  kowl:
+    network_mode: host
+    image: vectorized/console:master-9540d5a
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_BROKERS=127.0.0.1:9092
