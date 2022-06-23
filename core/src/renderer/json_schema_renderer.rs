@@ -96,7 +96,7 @@ mod test {
         AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
         StringNode,
     };
-    use crate::renderer::json_schema_renderer::{render_json_schemas, render_node, render_schemas};
+    use crate::renderer::json_schema_renderer::{render_json_schemas, render_node};
 
     fn render_json_schema(schema: &SchemaHypothesis) -> Value {
         render_json_schemas(hashmap! {"some_key".to_string() => schema.clone()})
