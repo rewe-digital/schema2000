@@ -18,13 +18,19 @@ const DISCRIMINATOR_KEY: &str = "type";
 
 pub fn generate_hypothesis_from_jsons(
     json_documents: Vec<serde_json::Result<Value>>,
+    use_discriminator: bool,
 ) -> Result<HashMap<String, SchemaHypothesis>, Box<dyn std::error::Error>> {
     let mut hypothesises: HashMap<String, SchemaHypothesis> = HashMap::new();
 
+    let discriminator_extractor = if use_discriminator {
+        extract_discriminator
+    } else {
+        |_: &Value| "magic_key".to_string()
+    };
     for json_document in json_documents {
         let document = &json_document?;
-        let discriminator_key = &extract_discriminator(document);
-        let new_hypo = generate_hypothesis(extract_payload(document));
+        let discriminator_key = &discriminator_extractor(document);
+        let new_hypo = generate_hypothesis(document);
 
         if hypothesises.contains_key(discriminator_key) {
             let current = hypothesises.get(discriminator_key).unwrap().clone();
@@ -35,31 +41,6 @@ pub fn generate_hypothesis_from_jsons(
         }
     }
     Ok(hypothesises)
-}
-
-pub fn generate_hypothesis_from_jsons_with_discriminator(
-    json_documents: Vec<serde_json::Result<Value>>,
-) -> Result<HashMap<String, SchemaHypothesis>, Box<dyn std::error::Error>> {
-    let mut hypothesises: HashMap<String, SchemaHypothesis> = HashMap::new();
-
-    for json_document in json_documents {
-        let document = &json_document?;
-        let discriminator_key = &extract_discriminator(document);
-        let new_hypo = generate_hypothesis(extract_payload(document));
-
-        if hypothesises.contains_key(discriminator_key) {
-            let current = hypothesises.get(discriminator_key).unwrap().clone();
-            let merged_hypo = merge_hypothesis(current, new_hypo);
-            hypothesises.insert(discriminator_key.to_string(), merged_hypo);
-        } else {
-            hypothesises.insert(discriminator_key.to_string(), new_hypo);
-        }
-    }
-    Ok(hypothesises)
-}
-
-fn extract_payload(document: &Value) -> &Value {
-    document.as_object().unwrap().get("payload").unwrap()
 }
 
 fn extract_discriminator(document: &Value) -> String {
@@ -95,23 +76,30 @@ mod test {
 
         let json_documents = deserializer.into_iter::<Value>().collect();
 
-        let actual = generate_hypothesis_from_jsons(json_documents).unwrap();
+        let actual = generate_hypothesis_from_jsons(json_documents, true).unwrap();
+
+        println!("{:?}", actual);
 
         assert_eq!(
             actual.keys().map(String::as_str).collect::<HashSet<&str>>(),
             hashset! {"address", "name"}
         );
 
-        let address_toplevel_keys = get_toplevel_properties(&actual.get("address").unwrap().root);
-        let name_toplevel_keys = get_toplevel_properties(&actual.get("name").unwrap().root);
+        let address_payload_keys = get_payload_properties(&actual.get("address").unwrap().root);
+        let name_payload_keys = get_payload_properties(&actual.get("name").unwrap().root);
 
-        assert_eq!(address_toplevel_keys, hashset! {"number", "street"});
-        assert_eq!(name_toplevel_keys, hashset! {"first_name", "last_name"});
+        assert_eq!(address_payload_keys, hashset! {"number", "street"});
+        assert_eq!(name_payload_keys, hashset! {"first_name", "last_name"});
     }
 
-    fn get_toplevel_properties(root_node: &NodeType) -> HashSet<&str> {
+    fn get_payload_properties(root_node: &NodeType) -> HashSet<&str> {
         match root_node {
-            Object(obj_node) => HashSet::from_iter(obj_node.properties.keys().map(String::as_str)),
+            Object(obj_node) => match &obj_node.properties.get("payload").unwrap().node_type {
+                Object(payload_node) => {
+                    HashSet::from_iter(payload_node.properties.keys().map(String::as_str))
+                }
+                _ => unreachable!(),
+            },
             _ => unreachable!(),
         }
     }

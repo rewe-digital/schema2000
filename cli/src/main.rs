@@ -15,7 +15,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let deserializer = serde_json::Deserializer::from_reader(stdin);
     let iterator: StreamDeserializer<IoRead<StdinLock>, Value> = deserializer.into_iter::<Value>();
 
-    let hypothesises = generate_hypothesis_from_jsons(iterator.collect())?;
+    // TODO make use_discriminator configurable before merging, and set it by default to false in order to stay backward compatible
+    let hypothesises = generate_hypothesis_from_jsons(iterator.collect(), true)?;
 
     hypothesises.values().for_each(|hypo| {
         let result = render_schema(hypo);
