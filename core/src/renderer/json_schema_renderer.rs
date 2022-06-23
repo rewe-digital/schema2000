@@ -16,9 +16,13 @@ pub fn render_schemas(schemas: HashMap<String, SchemaHypothesis>) -> String {
 
 fn render_json_schemas(schemas: HashMap<String, SchemaHypothesis>) -> Value {
     let sub_schemas: Vec<NodeType> = schemas.values().map(|hypo| &hypo.root).cloned().collect();
-    let new_toplevel_node = Any(AnyNode {
-        nodes: BTreeSet::from_iter(sub_schemas),
-    });
+    let new_toplevel_node = if sub_schemas.len() > 1 {
+        Any(AnyNode {
+            nodes: BTreeSet::from_iter(sub_schemas),
+        })
+    } else {
+        sub_schemas.first().unwrap().clone()
+    };
     render_node(&new_toplevel_node)
 }
 
