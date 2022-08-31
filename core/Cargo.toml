@@ -13,3 +13,5 @@ authors = ["REWE Digital schema2000 maintainers"]
 [dependencies]
 maplit = "1.0.2"
 serde_json = "1.0.83"
+parameterized = "1.0.0"
+chrono = "0.4.22"

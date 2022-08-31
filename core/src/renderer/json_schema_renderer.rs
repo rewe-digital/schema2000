@@ -19,6 +19,7 @@ fn render_json_schema(schema: &SchemaHypothesis) -> Value {
 fn render_node(node_type: &NodeType) -> Value {
     match node_type {
         NodeType::String(_) => json!({"type": "string"}),
+        NodeType::Datetime(_) => json!({"type": "string", "format": "date-time"}),
         NodeType::Integer(_) => json!({"type": "integer"}),
         NodeType::Number(_) => json!({"type": "number"}),
         NodeType::Boolean => json!({"type": "boolean"}),
@@ -56,9 +57,9 @@ fn generate_object_map(properties: &BTreeMap<String, ObjectProperty>) -> Map<Str
         .iter()
         .filter_map(|(key, value)| {
             if value.required {
-                Option::Some(Value::String(key.to_string()))
+                Some(Value::String(key.to_string()))
             } else {
-                Option::None
+                None
             }
         })
         .collect();
