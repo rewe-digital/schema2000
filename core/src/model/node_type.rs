@@ -1,5 +1,6 @@
 use crate::model::any::AnyNode;
 use crate::model::array::ArrayNode;
+use crate::model::date::DateNode;
 use crate::model::datetime::DateTimeNode;
 use crate::model::integer::IntegerNode;
 use crate::model::number::NumberNode;
@@ -16,7 +17,8 @@ pub enum NodeType {
     Number(NumberNode),
     Object(ObjectNode),
     String(StringNode),
-    Datetime(DateTimeNode),
+    DateTime(DateTimeNode),
+    Date(DateNode),
 }
 
 impl NodeType {
@@ -69,6 +71,12 @@ impl From<AnyNode> for NodeType {
 
 impl From<DateTimeNode> for NodeType {
     fn from(dt: DateTimeNode) -> Self {
-        NodeType::Datetime(dt)
+        NodeType::DateTime(dt)
+    }
+}
+
+impl From<DateNode> for NodeType {
+    fn from(dt: DateNode) -> Self {
+        NodeType::Date(dt)
     }
 }

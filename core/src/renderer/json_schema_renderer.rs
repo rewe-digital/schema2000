@@ -19,7 +19,8 @@ fn render_json_schema(schema: &SchemaHypothesis) -> Value {
 fn render_node(node_type: &NodeType) -> Value {
     match node_type {
         NodeType::String(_) => json!({"type": "string"}),
-        NodeType::Datetime(_) => json!({"type": "string", "format": "date-time"}),
+        NodeType::DateTime(_) => json!({"type": "string", "format": "date-time"}),
+        NodeType::Date(_) => json!({"type": "string", "format": "date"}),
         NodeType::Integer(_) => json!({"type": "integer"}),
         NodeType::Number(_) => json!({"type": "number"}),
         NodeType::Boolean => json!({"type": "boolean"}),

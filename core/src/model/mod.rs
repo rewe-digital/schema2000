@@ -6,6 +6,7 @@ pub use number::NumberNode;
 pub use object::{ObjectNode, ObjectProperty};
 pub use string::StringNode;
 pub use datetime::DateTimeNode;
+pub use date::DateNode;
 
 mod any;
 mod array;
@@ -15,6 +16,7 @@ mod number;
 mod object;
 mod string;
 mod datetime;
+mod date;
 
 #[derive(Debug, PartialEq)]
 pub struct SchemaHypothesis {

@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 use serde_json::{Map, Number, Value};
-use chrono::DateTime;
+use chrono::{DateTime, NaiveDate};
 
 use crate::model::{
     AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty,
-    SchemaHypothesis, StringNode, DateTimeNode,
+    SchemaHypothesis, StringNode, DateTimeNode, DateNode
 };
 use crate::utils::SetVariances;
 
@@ -50,6 +50,8 @@ fn map_number_to_node(nr: &Number) -> NodeType {
 fn map_string_to_node(text: &String) -> NodeType {
     if DateTime::parse_from_rfc3339(text).is_ok() {
         return DateTimeNode::new().into()
+    } else if NaiveDate::parse_from_str(text, "%F").is_ok() {
+        return DateNode::new().into()
     }
     StringNode::new().into()
 }
@@ -108,7 +110,7 @@ mod test {
     use parameterized::{parameterized, ide};
 
     use crate::generate::generate_node_type;
-    use crate::model::{AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty, StringNode, DateTimeNode};
+    use crate::model::{AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty, StringNode, DateTimeNode, DateNode};
 
     #[test]
     fn test_null() {
@@ -145,16 +147,23 @@ mod test {
 
         ide!();
 
-        #[parameterized(dt = {  "2000-01-01T00:00:00.000Z",
+        #[parameterized(dt = {
+                                "2000-01-01T00:00:00.000Z",
                                 "2000-13-01T00:00:00.000Z",
                                 "2000-02-30T00:00:00.000Z",
                                 "2000-01-01T25:00:00.000Z",
                                 "abcde",
+                                "2000-01-01",
+                                "2000-13-01",
+                                "2000-02-30",
                         },
                         expected = {
                                 DateTimeNode::new().into(),
                                 StringNode::new().into(),
                                 StringNode::new().into(),
+                                StringNode::new().into(),
+                                StringNode::new().into(),
+                                DateNode::new().into(),
                                 StringNode::new().into(),
                                 StringNode::new().into(),
                         })]
