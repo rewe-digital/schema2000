@@ -18,7 +18,7 @@ mod string;
 mod datetime;
 mod date;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SchemaHypothesis {
     pub root: NodeType,
 }
