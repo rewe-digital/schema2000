@@ -1,10 +1,10 @@
-use std::collections::{BTreeMap, BTreeSet};
-use serde_json::{Map, Number, Value};
 use chrono::{DateTime, NaiveDate};
+use serde_json::{Map, Number, Value};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{
-    AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty,
-    SchemaHypothesis, StringNode, DateTimeNode, DateNode
+    AnyNode, ArrayNode, DateNode, DateTimeNode, IntegerNode, NodeType, NumberNode, ObjectNode,
+    ObjectProperty, SchemaHypothesis, StringNode,
 };
 use crate::utils::SetVariances;
 
@@ -42,16 +42,16 @@ fn generate_node_type(dom: &Value) -> NodeType {
 
 fn map_number_to_node(nr: &Number) -> NodeType {
     if nr.is_f64() {
-        return NumberNode::new().into()
+        return NumberNode::new().into();
     }
     IntegerNode::new().into()
 }
 
 fn map_string_to_node(text: &String) -> NodeType {
     if DateTime::parse_from_rfc3339(text).is_ok() {
-        return DateTimeNode::new().into()
+        return DateTimeNode::new().into();
     } else if NaiveDate::parse_from_str(text, "%F").is_ok() {
-        return DateNode::new().into()
+        return DateNode::new().into();
     }
     StringNode::new().into()
 }
@@ -106,11 +106,14 @@ pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
 #[cfg(test)]
 mod test {
     use maplit::{btreemap, btreeset};
+    use parameterized::{ide, parameterized};
     use serde_json::json;
-    use parameterized::{parameterized, ide};
 
     use crate::generate::generate_node_type;
-    use crate::model::{AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty, StringNode, DateTimeNode, DateNode};
+    use crate::model::{
+        AnyNode, ArrayNode, DateNode, DateTimeNode, IntegerNode, NodeType, NumberNode, ObjectNode,
+        ObjectProperty, StringNode,
+    };
 
     #[test]
     fn test_null() {
@@ -171,7 +174,6 @@ mod test {
             let dom = json!(dt);
             assert_eq!(generate_node_type(&dom), expected);
         }
-
     }
 
     #[test]
