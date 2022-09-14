@@ -1,6 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub use generate::generate_hypothesis;
+pub use generate::generate_hypothesis_from_iterator;
 pub use merge::merge_hypothesis;
 pub use model::SchemaHypothesis;
 pub use renderer::render_schema;
