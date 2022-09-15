@@ -47,7 +47,7 @@ fn map_number_to_node(nr: &Number) -> NodeType {
     IntegerNode::new().into()
 }
 
-fn map_string_to_node(text: &String) -> NodeType {
+fn map_string_to_node(text: &str) -> NodeType {
     if DateTime::parse_from_rfc3339(text).is_ok() {
         return DateTimeNode::new().into();
     } else if NaiveDate::parse_from_str(text, "%F").is_ok() {
