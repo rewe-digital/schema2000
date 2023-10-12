@@ -1,11 +1,20 @@
 use clap::Parser;
 use schema2000::{render_schema, SchemaHypothesis};
+use std::error::Error;
+use std::fs::File;
+use std::io::{self, Read};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _args = Args::parse();
+fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
 
-    let stdin = std::io::stdin();
-    let stdin = stdin.lock();
+    let stdin: Box<dyn Read> = if let Some(file_path) = args.file {
+        // Read from a file if the `--file` option is provided.
+        let file = File::open(&file_path)?;
+        Box::new(file)
+    } else {
+        // Read from standard input if the `--file` option is not provided.
+        Box::new(io::stdin())
+    };
 
     let deserializer = serde_json::Deserializer::from_reader(stdin);
     let iterator = deserializer.into_iter::<serde_json::Value>();
@@ -31,4 +40,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
-struct Args {}
+struct Args {
+    #[clap(short, long)]
+    /// JSON file path
+    file: Option<String>,
+}
