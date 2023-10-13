@@ -7,16 +7,9 @@ use std::io::{self, Read};
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    let stdin: Box<dyn Read> = if let Some(file_path) = args.file {
-        // Read from a file if the `--file` option is provided.
-        let file = File::open(&file_path)?;
-        Box::new(file)
-    } else {
-        // Read from standard input if the `--file` option is not provided.
-        Box::new(io::stdin())
-    };
+    let reader: Box<dyn Read> = get_reader(args.file);
 
-    let deserializer = serde_json::Deserializer::from_reader(stdin);
+    let deserializer = serde_json::Deserializer::from_reader(reader);
     let iterator = deserializer.into_iter::<serde_json::Value>();
 
     let mut current_hypothesis: Option<SchemaHypothesis> = None;
@@ -36,6 +29,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{}", result);
 
     Ok(())
+}
+
+fn get_reader(path: Option<String>) -> Box<dyn Read> {
+    return if let Some(file_path) = path {
+        // Read from a file if the `--file` option is provided.
+        let file = File::open(&file_path).expect("Failed to open file");
+        Box::new(file)
+    } else {
+        // Read from standard input if the `--file` option is not provided.
+        Box::new(io::stdin())
+    };
 }
 
 #[derive(Parser, Debug)]
