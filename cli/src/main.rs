@@ -32,14 +32,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn get_reader(path: Option<String>) -> Box<dyn Read> {
-    return if let Some(file_path) = path {
+    if let Some(file_path) = path {
         // Read from a file if the `--file` option is provided.
-        let file = File::open(&file_path).expect("Failed to open file");
+        let file = File::open(file_path).expect("Failed to open file");
         Box::new(file)
     } else {
         // Read from standard input if the `--file` option is not provided.
         Box::new(io::stdin())
-    };
+    }
 }
 
 #[derive(Parser, Debug)]
