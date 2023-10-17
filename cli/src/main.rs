@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let result = render_schema(&current_hypothesis.unwrap());
 
-    println!("{}", result);
+    println!("{result}");
 
     Ok(())
 }
