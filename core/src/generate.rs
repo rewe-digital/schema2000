@@ -1,11 +1,12 @@
+use chrono::{DateTime, NaiveDate};
+use serde_json::{Map, Number, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::merge_hypothesis;
-use serde_json::{Map, Value};
 
 use crate::model::{
-    AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty,
-    SchemaHypothesis, StringNode,
+    AnyNode, ArrayNode, DateNode, DateTimeNode, IntegerNode, NodeType, NumberNode, ObjectNode,
+    ObjectProperty, SchemaHypothesis, StringNode,
 };
 use crate::utils::SetVariances;
 
@@ -28,9 +29,8 @@ fn generate_node_type(dom: &Value) -> NodeType {
     match dom {
         Value::Null => NodeType::Null,
         Value::Bool(_) => NodeType::Boolean,
-        Value::Number(i) if i.is_f64() => NumberNode::new().into(),
-        Value::Number(_) => IntegerNode::new().into(),
-        Value::String(_) => StringNode::new().into(),
+        Value::Number(i) => map_number_to_node(i),
+        Value::String(s) => map_string_to_node(s),
         Value::Array(array_values) => {
             if array_values.is_empty() {
                 ArrayNode::new_untyped().into()
@@ -42,12 +42,28 @@ fn generate_node_type(dom: &Value) -> NodeType {
     }
 }
 
+fn map_number_to_node(nr: &Number) -> NodeType {
+    if nr.is_f64() {
+        return NumberNode::new().into();
+    }
+    IntegerNode::new().into()
+}
+
+fn map_string_to_node(text: &str) -> NodeType {
+    if DateTime::parse_from_rfc3339(text).is_ok() {
+        return DateTimeNode::new().into();
+    } else if NaiveDate::parse_from_str(text, "%F").is_ok() {
+        return DateNode::new().into();
+    }
+    StringNode::new().into()
+}
+
 fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
     let mut merged_obj_type: Option<NodeType> = None;
     let mut merged_array_type: Option<NodeType> = None;
     let mut types = BTreeSet::new();
 
-    for value in array_values.iter() {
+    for value in array_values {
         let value_type = generate_node_type(value);
         match value_type {
             NodeType::Object(ObjectNode { properties: _ }) => {
@@ -110,12 +126,13 @@ where
 #[cfg(test)]
 mod test {
     use maplit::{btreemap, btreeset};
+    use parameterized::{ide, parameterized};
     use serde_json::json;
 
     use crate::generate::generate_node_type;
     use crate::model::{
-        AnyNode, ArrayNode, IntegerNode, NodeType, NumberNode, ObjectNode, ObjectProperty,
-        StringNode,
+        AnyNode, ArrayNode, DateNode, DateTimeNode, IntegerNode, NodeType, NumberNode, ObjectNode,
+        ObjectProperty, StringNode,
     };
 
     #[test]
@@ -146,6 +163,37 @@ mod test {
     fn test_string() {
         let dom = json!("Schema 2000");
         assert_eq!(generate_node_type(&dom), StringNode::new().into());
+    }
+
+    mod parameterized_tests {
+        use super::*;
+
+        ide!();
+
+        #[parameterized(dt = {
+                                "2000-01-01T00:00:00.000Z",
+                                "2000-13-01T00:00:00.000Z",
+                                "2000-02-30T00:00:00.000Z",
+                                "2000-01-01T25:00:00.000Z",
+                                "abcde",
+                                "2000-01-01",
+                                "2000-13-01",
+                                "2000-02-30",
+                        },
+                        expected = {
+                                DateTimeNode::new().into(),
+                                StringNode::new().into(),
+                                StringNode::new().into(),
+                                StringNode::new().into(),
+                                StringNode::new().into(),
+                                DateNode::new().into(),
+                                StringNode::new().into(),
+                                StringNode::new().into(),
+                        })]
+        fn test_string_mapping(dt: &str, expected: NodeType) {
+            let dom = json!(dt);
+            assert_eq!(generate_node_type(&dom), expected);
+        }
     }
 
     #[test]

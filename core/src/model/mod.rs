@@ -1,5 +1,7 @@
 pub use any::AnyNode;
 pub use array::ArrayNode;
+pub use date::DateNode;
+pub use datetime::DateTimeNode;
 pub use integer::IntegerNode;
 pub use node_type::NodeType;
 pub use number::NumberNode;
@@ -8,6 +10,8 @@ pub use string::StringNode;
 
 mod any;
 mod array;
+mod date;
+mod datetime;
 mod integer;
 mod node_type;
 mod number;

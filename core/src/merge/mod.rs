@@ -1,6 +1,6 @@
 use crate::merge::array::merge_array;
 use crate::merge::object::merge_object;
-use crate::model::{AnyNode, NodeType, SchemaHypothesis};
+use crate::model::{AnyNode, DateNode, DateTimeNode, NodeType, SchemaHypothesis, StringNode};
 use maplit::btreeset;
 
 mod any;
@@ -18,6 +18,18 @@ pub fn merge_node_type(a: NodeType, b: NodeType) -> NodeType {
     match (a, b) {
         (a, b) if a == b => a,
         (NodeType::Object(a), NodeType::Object(b)) => merge_object(a, b).into(),
+        (NodeType::Date(_), NodeType::String(_)) | (NodeType::String(_), NodeType::Date(_)) => {
+            StringNode::new().into()
+        }
+        (NodeType::DateTime(_), NodeType::String(_))
+        | (NodeType::String(_), NodeType::DateTime(_)) => StringNode::new().into(),
+        (NodeType::Date(_), NodeType::DateTime(_)) | (NodeType::DateTime(_), NodeType::Date(_)) => {
+            AnyNode::new(btreeset![
+                DateNode::new().into(),
+                DateTimeNode::new().into()
+            ])
+            .into()
+        }
         (NodeType::Array(a), NodeType::Array(b)) => merge_array(a, b).into(),
         (NodeType::Any(xs), NodeType::Any(ys)) => any::merge_any(&xs, ys),
         (a @ NodeType::Any(_), b) | (b, a @ NodeType::Any(_)) => {
@@ -36,8 +48,8 @@ mod test {
 
     use crate::merge::{merge_hypothesis, merge_node_type};
     use crate::model::{
-        AnyNode, ArrayNode, IntegerNode, NodeType, ObjectNode, ObjectProperty, SchemaHypothesis,
-        StringNode,
+        AnyNode, ArrayNode, DateNode, DateTimeNode, IntegerNode, NodeType, ObjectNode,
+        ObjectProperty, SchemaHypothesis, StringNode,
     };
 
     #[test]
@@ -245,6 +257,47 @@ mod test {
             AnyNode::new(btreeset![
                 StringNode::new().into(),
                 IntegerNode::new().into()
+            ])
+            .into()
+        );
+    }
+
+    #[test]
+    fn test_merge_datetime_and_string() {
+        let actual = merge_node_type(DateTimeNode::new().into(), StringNode::new().into());
+        assert_eq!(actual, StringNode::new().into());
+
+        let actual_swapped = merge_node_type(StringNode::new().into(), DateTimeNode::new().into());
+        assert_eq!(actual_swapped, StringNode::new().into());
+    }
+
+    #[test]
+    fn test_merge_date_and_string() {
+        let actual = merge_node_type(DateNode::new().into(), StringNode::new().into());
+        assert_eq!(actual, StringNode::new().into());
+
+        let actual_swapped = merge_node_type(StringNode::new().into(), DateNode::new().into());
+        assert_eq!(actual_swapped, StringNode::new().into());
+    }
+
+    #[test]
+    fn test_merge_date_and_datetime() {
+        let actual = merge_node_type(DateTimeNode::new().into(), DateNode::new().into());
+        assert_eq!(
+            actual,
+            AnyNode::new(btreeset![
+                DateNode::new().into(),
+                DateTimeNode::new().into()
+            ])
+            .into()
+        );
+
+        let actual_swapped = merge_node_type(DateNode::new().into(), DateTimeNode::new().into());
+        assert_eq!(
+            actual_swapped,
+            AnyNode::new(btreeset![
+                DateNode::new().into(),
+                DateTimeNode::new().into()
             ])
             .into()
         );
