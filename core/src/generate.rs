@@ -61,7 +61,7 @@ fn generate_node_type_for_array_values(array_values: &[Value]) -> NodeType {
     let mut merged_array_type: Option<NodeType> = None;
     let mut types = BTreeSet::new();
 
-    for value in array_values.iter() {
+    for value in array_values {
         let value_type = generate_node_type(value);
         match value_type {
             NodeType::Object(ObjectNode { properties: _ }) => {
