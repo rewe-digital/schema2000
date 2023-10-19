@@ -44,32 +44,8 @@ jobs:
       - name: linter
         run: cargo clippy -- -D warnings
 
-  pedantic:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: install clippy nightly
-        run: rustup toolchain install nightly --component clippy
-
-      - name: get rust nightly version
-        id: rust_nightly
-        run: echo ::set-output name=version::$(rustup run nightly rustc --version)
-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ steps.rust_nightly.outputs.version }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-
-            ${{ runner.os }}-cargo-
-
       - name: run the pedantic linter (warnings only)
-        run: cargo +nightly clippy --color=always --all-targets -- -W clippy::pedantic
+        run: cargo clippy --color=always --all-targets -- -W clippy::pedantic
 
   build:
     needs: check
