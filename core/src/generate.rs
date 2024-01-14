@@ -2,6 +2,8 @@ use chrono::{DateTime, NaiveDate};
 use serde_json::{Map, Number, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::merge_hypothesis;
+
 use crate::model::{
     AnyNode, ArrayNode, DateNode, DateTimeNode, IntegerNode, NodeType, NumberNode, ObjectNode,
     ObjectProperty, SchemaHypothesis, StringNode,
@@ -101,6 +103,24 @@ pub fn generate_hypothesis(dom: &Value) -> SchemaHypothesis {
     SchemaHypothesis {
         root: generate_node_type(dom),
     }
+}
+
+pub fn generate_hypothesis_from_iterator<I>(values: I) -> SchemaHypothesis
+where
+    I: Iterator<Item = Value>,
+{
+    let mut current_hypothesis: Option<SchemaHypothesis> = None;
+
+    for json_document in values {
+        let new_hypo = generate_hypothesis(&json_document);
+        if current_hypothesis.is_none() {
+            current_hypothesis = Some(new_hypo);
+        } else {
+            current_hypothesis = current_hypothesis.map(|cur| merge_hypothesis(cur, new_hypo));
+        }
+    }
+
+    current_hypothesis.unwrap()
 }
 
 #[cfg(test)]
