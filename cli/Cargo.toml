@@ -11,7 +11,7 @@ categories = ["command-line-utilities"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde_json = "1.0.115"
+serde_json = "1.0.116"
 clap = { version = "4.5.4", features = ["derive"] }
 schema2000 = { version = "0.1.0",  path = "../core" }
 
